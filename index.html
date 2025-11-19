@@ -48,6 +48,7 @@
     .key, .btn-add {
       background:#fff; border:1px solid #ddd; border-radius:10px;
       padding:18px; font-size:1.35rem; font-weight:900; color:#000; cursor:pointer;
+      user-select:none;
     }
     .btn-add { border:2px solid var(--verde); }
     .btn-capture {
@@ -60,6 +61,7 @@
       background-color:var(--verde);
       background-image:url('fundo-calculadora.png'); /* imagem verde com carrinho */
       background-size:cover; background-position:center;
+      -webkit-tap-highlight-color: transparent;
     }
     footer { margin-top:auto; background:#fff; border-top:1px solid #ddd; }
     .list-item {
@@ -97,8 +99,8 @@
   </section>
 
   <section class="inputs-row">
-    <input id="productInput" class="text-input" placeholder="Nome do produto"/>
-    <input id="priceInput" class="price-input" readonly placeholder="Preço"/>
+    <input id="productInput" class="text-input" placeholder="Nome do produto" inputmode="text" autocomplete="off"/>
+    <input id="priceInput" class="price-input" readonly placeholder="Preço" inputmode="numeric"/>
   </section>
 
   <section class="actions-row">
@@ -114,4 +116,127 @@
   <section class="keypad" id="keypad">
     <div class="key" data-key="1">1</div><div class="key" data-key="2">2</div><div class="key" data-key="3">3</div>
     <div class="key" data-key="4">4</div><div class="key" data-key="5">5</div><div class="key" data-key="6">6</div>
-    <div class="key" data-key="7">7</div><div class="key" data-key="8">8</div><div class="key" data-key="9">
+    <div class="key" data-key="7">7</div><div class="key" data-key="8">8</div><div class="key" data-key="9">9</div>
+    <div class="key" data-key="0">0</div><div class="key" data-action="comma">,</div><div class="key" data-action="back">⌫</div>
+  </section>
+
+  <footer>
+    <div id="list"></div>
+  </footer>
+
+  <script>
+    const state = { items:[], limit:0, target:'price' };
+    const productInput=document.getElementById('productInput');
+    const priceInput=document.getElementById('priceInput');
+    const limitInput=document.getElementById('limitInput');
+    const totalValue=document.getElementById('totalValue');
+    const progressFill=document.getElementById('progressFill');
+    const progressText=document.getElementById('progressText');
+
+    // Inicialização segura
+    document.addEventListener('DOMContentLoaded', () => {
+      // Garante raw do preço
+      if (!priceInput.dataset.raw) priceInput.dataset.raw = '';
+      // Começa com alvo 'price' por padrão
+      setTarget('price');
+      // Atualiza barra inicialmente
+      recalc();
+    });
+
+    // Define campo alvo de forma explícita
+    function setTarget(t){ state.target=t; }
+    priceInput.addEventListener('click',()=>setTarget('price'));
+    limitInput.addEventListener('click',()=>setTarget('limit'));
+    productInput.addEventListener('focus',()=>setTarget(null));
+
+    // Listener para teclado: suporta click e touchstart
+    const keypad = document.getElementById('keypad');
+    const handleKeyEvent = (e) => {
+      const k = e.target.closest('.key');
+      if (!k) return;
+      // Se não há alvo (ex.: digitando nome do produto), não processa números
+      if (!state.target) return;
+
+      e.preventDefault();
+      const act = k.dataset.action;
+      const d = k.dataset.key;
+
+      if (act === 'back') { backspace(); return; }
+      if (act === 'comma') { insertComma(); return; }
+      if (d) { insertDigit(d); }
+    };
+    keypad.addEventListener('click', handleKeyEvent, { passive:false });
+    keypad.addEventListener('touchstart', handleKeyEvent, { passive:false });
+
+    // Inserção de dígitos
+    function insertDigit(d){
+      if(state.target==='price'){
+        const raw = priceInput.dataset.raw || '';
+        priceInput.dataset.raw = raw + d;
+        formatPrice(priceInput.dataset.raw);
+      }else if(state.target==='limit'){
+        limitInput.value = (limitInput.value || '') + d;
+        state.limit = parseInt(limitInput.value) || 0;
+        recalc();
+      }
+    }
+
+    // Apagar último dígito
+    function backspace(){
+      if(state.target==='price'){
+        const raw = priceInput.dataset.raw || '';
+        priceInput.dataset.raw = raw.slice(0,-1);
+        formatPrice(priceInput.dataset.raw);
+      }else if(state.target==='limit'){
+        limitInput.value = (limitInput.value || '').slice(0,-1);
+        state.limit = parseInt(limitInput.value) || 0;
+        recalc();
+      }
+    }
+
+    // Vírgula: formatação já assume 2 casas; não é necessário inserir manualmente
+    function insertComma(){ /* intencionalmente sem ação */ }
+
+    // Formata preço a partir de dígitos brutos (sempre 2 casas decimais)
+    function formatPrice(raw){
+      if(!raw){ priceInput.value=''; return; }
+      if(raw.length===1){ priceInput.value='0,0'+raw; return; }
+      if(raw.length===2){ priceInput.value='0,'+raw; return; }
+      const reais = raw.slice(0,-2);
+      const cent  = raw.slice(-2);
+      priceInput.value = reais + ',' + cent;
+    }
+
+    // Converte string "1.234,56" para número 1234.56
+    function parsePrice(s){
+      if(!s) return 0;
+      return parseFloat(s.replace(/\./g,'').replace(',','.')) || 0;
+    }
+
+    // Recalcula total e barra (mantém sua lógica)
+    function recalc(){
+      // Calcula total pelos itens existentes (seu código já mantém items e quantidades)
+      const total = state.items.reduce((sum, i) => sum + (i.price * i.qty), 0);
+      totalValue.textContent = total.toFixed(2).replace('.', ',');
+
+      const limit = state.limit || 0;
+      const pct = limit > 0 ? Math.min(100, Math.round((total/limit)*100)) : 0;
+
+      // Largura da barra
+      progressFill.style.width = pct + '%';
+
+      // Cor da barra
+      if(pct >= 95){
+        progressFill.style.background = 'var(--vermelho)';
+      }else if(pct >= 50){
+        progressFill.style.background = 'var(--amarelo)';
+      }else{
+        progressFill.style.background = 'var(--verde)';
+      }
+
+      // Texto da porcentagem
+      progressText.textContent = pct + '%';
+    }
+  </script>
+</body>
+</html>
