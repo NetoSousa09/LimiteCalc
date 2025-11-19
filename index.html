@@ -4,48 +4,51 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>LimiteCalc</title>
+  <!-- OCR -->
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@2.1.5/dist/tesseract.min.js"></script>
+  <!-- PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
-    :root{--verde:#1abc9c;--amarelo:#f1c40f;--vermelho:#e74c3c;}
-    body{margin:0;font-family:Arial;background:#f4f4f4;}
+    body {margin:0;font-family:Arial,sans-serif;background:#f4f4f4;}
     .logo-central{text-align:center;margin:10px;}
     .logo-central img{width:80%;max-width:400px;}
     header{text-align:center;}
     .title{display:flex;align-items:center;justify-content:center;gap:10px;}
-    .title h1{color:var(--verde);margin:0;font-size:2rem;}
+    .title h1{color:#1abc9c;margin:0;font-size:2rem;}
     .title img{width:40px;}
     .total-geral{font-size:1.6rem;font-weight:700;margin:10px;}
-    .limite-row{display:flex;justify-content:center;gap:10px;}
-    .limite-box{border:2px solid var(--verde);border-radius:8px;padding:5px;}
+    .limite-row{display:flex;justify-content:center;gap:10px;margin-bottom:10px;}
+    .limite-box{border:2px solid #1abc9c;border-radius:8px;padding:5px;}
     .limite-input{text-align:center;font-size:1.2rem;width:80px;}
-    .progress{flex:1;position:relative;height:22px;background:#ddd;border-radius:12px;overflow:hidden;}
-    .progress-bar{height:100%;width:0%;background:var(--verde);}
+    .progress{flex:1;position:relative;height:22px;background:#ddd;border-radius:12px;overflow:hidden;max-width:200px;}
+    .progress-bar{height:100%;width:0%;background:#1abc9c;}
     .progress-text{position:absolute;top:0;left:50%;transform:translateX(-50%);font-size:0.9rem;font-weight:700;}
     .produto-row{display:flex;gap:10px;margin:10px;}
     .qtd-box input{width:60px;text-align:center;}
     .nome input,.preco input{width:100%;padding:8px;}
     .add-row{text-align:center;margin:10px;}
-    .btn-add{background:var(--verde);color:#fff;padding:10px 20px;border:none;border-radius:8px;font-weight:700;}
+    .btn-add{background:#1abc9c;color:#fff;padding:10px 20px;border:none;border-radius:8px;font-weight:700;}
     .ocr-row{text-align:center;margin:10px;}
     .btn-ocr{background:#222;color:#fff;padding:10px 20px;border:none;border-radius:8px;}
-    footer{background:#fff;border-top:2px solid var(--verde);max-height:40vh;overflow:auto;}
+    .extra-buttons{text-align:center;margin:10px;}
+    .extra-buttons button{margin:5px;padding:10px;border:none;border-radius:8px;font-weight:700;}
+    .btn-pdf{background:#1abc9c;color:#fff;}
+    .btn-clear{background:#e74c3c;color:#fff;}
+    footer{background:#fff;border-top:2px solid #1abc9c;max-height:40vh;overflow:auto;}
     .item{display:grid;grid-template-columns:60px 1fr 100px;gap:10px;padding:10px;border-bottom:1px solid #eee;}
     .qtd-badge{background:#eee;padding:5px;text-align:center;}
     .item-nome{cursor:pointer;}
-    .extra-buttons{text-align:center;margin:10px;}
-    .extra-buttons button{margin:5px;padding:10px;border:none;border-radius:8px;font-weight:700;}
-    .btn-pdf{background:var(--verde);color:#fff;}
-    .btn-clear{background:var(--vermelho);color:#fff;}
-    .modal{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;}
+    .modal{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:none;align-items:center;justify-content:center;}
     .modal .box{background:#fff;padding:20px;border-radius:8px;}
   </style>
 </head>
 <body>
-  <div class="logo-central"><img src="icon-512.png" alt="LimiteCalc Logo"></div>
+  <div class="logo-central">
+    <img src="icon-512.png" alt="LimiteCalc Logo" />
+  </div>
   <header>
     <div class="title">
-      <img src="icon-192.png" alt="Carrinho">
+      <img src="icon-192.png" alt="Carrinho" />
       <h1>LimiteCalc</h1>
     </div>
     <div class="total-geral">TOTAL GERAL: R$ <span id="totalValor">0,00</span></div>
@@ -66,15 +69,21 @@
     <div class="nome"><input id="nomeInput" placeholder="Nome do produto" /></div>
     <div class="preco"><input id="precoInput" placeholder="0,00" /></div>
   </div>
-  <div class="add-row"><button class="btn-add" id="btnAdicionar">Adicionar Produto</button></div>
+
+  <div class="add-row">
+    <button class="btn-add" id="btnAdicionar">Adicionar Produto</button>
+  </div>
+
   <div class="ocr-row">
     <button class="btn-ocr" id="btnOCR">Capturar Etiqueta</button>
     <input id="ocrInput" type="file" accept="image/*" capture="environment" style="display:none" />
   </div>
+
   <div class="extra-buttons">
     <button class="btn-pdf" id="btnPDF">Salvar em PDF</button>
     <button class="btn-clear" id="btnClear">Limpar Imagens</button>
   </div>
+
   <footer id="lista"></footer>
 
   <div class="modal" id="modal">
@@ -92,21 +101,49 @@ const progressBar=document.getElementById("progressBar");
 const progressText=document.getElementById("progressText");
 const listaEl=document.getElementById("lista");
 const modal=document.getElementById("modal");
+
 document.getElementById("limiteInput").addEventListener("input",e=>{
   limite=parseFloat(e.target.value)||0;atualizar();
 });
+
 document.getElementById("btnAdicionar").addEventListener("click",()=>{
   let nome=document.getElementById("nomeInput").value;
   let preco=parseFloat(document.getElementById("precoInput").value.replace(",","."))||0;
   let qtd=parseInt(document.getElementById("qtdInput").value)||1;
-  if(nome&&preco>0){produtos.push({nome,preco,qtd});document.getElementById("nomeInput").value="";document.getElementById("precoInput").value="0,00";document.getElementById("qtdInput").value="1";atualizar();}
+  if(nome&&preco>0){
+    produtos.push({nome,preco,qtd});
+    document.getElementById("nomeInput").value="";
+    document.getElementById("precoInput").value="0,00";
+    document.getElementById("qtdInput").value="1";
+    atualizar();
+  }
 });
+
 function atualizar(){
   listaEl.innerHTML="";let total=0;
-  produtos.forEach((p,i)=>{total+=p.preco*p.qtd;
+  produtos.forEach((p,i)=>{
+    total+=p.preco*p.qtd;
     let row=document.createElement("div");row.className="item";
     row.innerHTML=`<div class="qtd-badge">x${p.qtd}</div><div class="item-nome">${p.nome}</div><div class="item-preco">R$ ${(p.preco*p.qtd).toFixed(2).replace(".",",")}</div>`;
     row.querySelector(".item-nome").onclick=()=>{itemIndex=i;modal.style.display="flex";};
     listaEl.appendChild(row);
   });
   totalValorEl.textContent=total.toFixed(2).replace(".",",");
+  let pct=limite>0?Math.min(100,(total/limite)*100):0;
+  progressBar.style.width=pct+"%";
+  progressText.textContent=Math.round(pct)+"%";
+  if(pct>=95){progressBar.style.background="#e74c3c";totalValorEl.parentElement.style.color="#e74c3c";}
+  else if(pct>=50){progressBar.style.background="#f1c40f";totalValorEl.parentElement.style.color="#f1c40f";}
+  else{progressBar.style.background="#1abc9c";totalValorEl.parentElement.style.color="#1abc9c";}
+}
+
+document.getElementById("modalNo").onclick=()=>{modal.style.display="none";itemIndex=null;};
+document.getElementById("modalYes").onclick=()=>{if(itemIndex!==null){produtos.splice(itemIndex,1);itemIndex=null;modal.style.display="none";atualizar();}};
+
+document.getElementById("btnOCR").onclick=()=>{document.getElementById("ocrInput").value="";document.getElementById("ocrInput").click();};
+
+document.getElementById("ocrInput").addEventListener("change",async()=>{
+  const file=document.getElementById("ocrInput").files[0];if(!file)return;
+  try{
+    const {data:{text}}=await Tesseract.recognize<!-- topo da página -->
+
