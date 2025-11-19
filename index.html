@@ -3,99 +3,224 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Calculadora Inteligente</title>
+  <title>LimiteCalc - Calculadora Inteligente</title>
   <link rel="manifest" href="manifest.json" />
   <meta name="theme-color" content="#1abc9c" />
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@2.1.5/dist/tesseract.min.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
+      margin: 0;
+      background: url('https://cdn-icons-png.flaticon.com/512/1170/1170678.png') no-repeat center top;
+      background-size: 150px;
       background-color: #f4f4f4;
+    }
+    header {
       text-align: center;
       padding: 20px;
-    }
-    h2 {
       color: #1abc9c;
     }
-    #display {
-      width: 100%;
-      max-width: 300px;
-      margin: 20px auto;
-      font-size: 2em;
+    #limite {
+      width: 80%;
       padding: 10px;
-      background: #fff;
+      font-size: 1.2em;
+      margin: 10px auto;
+      display: block;
       border: 2px solid #1abc9c;
       border-radius: 8px;
     }
-    .buttons {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 10px;
-      max-width: 300px;
-      margin: auto;
+    #progress {
+      width: 80%;
+      height: 20px;
+      margin: 10px auto;
+      background: #ddd;
+      border-radius: 10px;
+      overflow: hidden;
     }
-    button {
-      padding: 20px;
-      font-size: 1.2em;
-      border: none;
-      border-radius: 8px;
-      background-color: #1abc9c;
-      color: white;
+    #progress-bar {
+      height: 100%;
+      width: 0%;
+      background: #1abc9c;
+      transition: width 0.3s;
+    }
+    #total {
+      font-size: 2em;
+      margin: 20px;
+      text-align: center;
+      color: #e74c3c;
+    }
+    #lista {
+      background: #fff;
+      border-top: 2px solid #1abc9c;
+      padding: 10px;
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      max-height: 40%;
+      overflow-y: auto;
+    }
+    .item {
+      display: flex;
+      justify-content: space-between;
+      padding: 5px;
+      border-bottom: 1px solid #ddd;
+    }
+    .item span {
       cursor: pointer;
     }
-    button:hover {
-      background-color: #16a085;
+    .inputs {
+      display: flex;
+      justify-content: center;
+      gap: 5px;
+      margin: 10px;
+    }
+    .inputs input {
+      padding: 5px;
+      font-size: 1em;
+    }
+    .inputs button {
+      padding: 5px 10px;
+      font-size: 1em;
+      background: #1abc9c;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .inputs button:hover {
+      background: #16a085;
     }
   </style>
 </head>
 <body>
-  <h2>Calculadora Inteligente</h2>
-  <div id="display">0</div>
-  <div class="buttons">
-    <button onclick="press('7')">7</button>
-    <button onclick="press('8')">8</button>
-    <button onclick="press('9')">9</button>
-    <button onclick="press('/')">÷</button>
-    <button onclick="press('4')">4</button>
-    <button onclick="press('5')">5</button>
-    <button onclick="press('6')">6</button>
-    <button onclick="press('*')">×</button>
-    <button onclick="press('1')">1</button>
-    <button onclick="press('2')">2</button>
-    <button onclick="press('3')">3</button>
-    <button onclick="press('-')">−</button>
-    <button onclick="press('0')">0</button>
-    <button onclick="press('.')">.</button>
-    <button onclick="calculate()">=</button>
-    <button onclick="press('+')">+</button>
-    <button onclick="clearDisplay()" style="grid-column: span 4; background-color: #e74c3c;">C</button>
+  <header>
+    <h2>LimiteCalc 🛒</h2>
+    <input id="limite" type="number" placeholder="Digite seu limite de gastos (R$)" />
+    <div id="progress"><div id="progress-bar"></div></div>
+    <div id="total">TOTAL GERAL: R$ 0,00</div>
+  </header>
+
+  <!-- Entrada manual -->
+  <div class="inputs">
+    <input id="nomeProduto" type="text" placeholder="Nome do produto" />
+    <input id="valorProduto" type="number" placeholder="Valor (R$)" step="0.01" />
+    <button onclick="alterarQtd(-1)">−</button>
+    <span id="qtd">1</span>
+    <button onclick="alterarQtd(1)">+</button>
+    <button onclick="adicionarManual()">Adicionar</button>
   </div>
 
-  <script>
-    let current = "";
+  <!-- OCR -->
+  <div class="inputs">
+    <input type="file" id="ocrInput" accept="image/*" />
+    <button onclick="capturarOCR()">Capturar Etiqueta</button>
+  </div>
 
-    function press(value) {
-      current += value;
-      document.getElementById("display").innerText = current;
+  <div id="lista"></div>
+
+  <script>
+    let produtos = [];
+    let limite = 0;
+    let qtdAtual = 1;
+
+    document.getElementById("limite").addEventListener("input", e => {
+      limite = parseFloat(e.target.value) || 0;
+      atualizar();
+    });
+
+    function alterarQtd(valor) {
+      qtdAtual = Math.max(1, qtdAtual + valor);
+      document.getElementById("qtd").innerText = qtdAtual;
     }
 
-    function calculate() {
-      try {
-        current = eval(current).toString();
-        document.getElementById("display").innerText = current;
-      } catch {
-        document.getElementById("display").innerText = "Erro";
-        current = "";
+    function adicionarManual() {
+      let nome = document.getElementById("nomeProduto").value;
+      let preco = parseFloat(document.getElementById("valorProduto").value);
+      if(nome && preco > 0) {
+        produtos.push({nome, preco, qtd: qtdAtual});
+        document.getElementById("nomeProduto").value = "";
+        document.getElementById("valorProduto").value = "";
+        qtdAtual = 1;
+        document.getElementById("qtd").innerText = qtdAtual;
+        atualizar();
+      } else {
+        alert("Digite nome e valor válidos!");
       }
     }
 
-    function clearDisplay() {
-      current = "";
-      document.getElementById("display").innerText = "0";
+    function excluirProduto(index) {
+      if(confirm("Deseja excluir este produto?")) {
+        produtos.splice(index, 1);
+        atualizar();
+      }
     }
 
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("service-worker.js");
+    function atualizar() {
+      let lista = document.getElementById("lista");
+      lista.innerHTML = "";
+      let total = 0;
+
+      produtos.forEach((p, i) => {
+        total += p.preco * p.qtd;
+        let div = document.createElement("div");
+        div.className = "item";
+        div.innerHTML = `
+          <span onclick="excluirProduto(${i})">${p.nome} (x${p.qtd})</span>
+          <span>R$ ${(p.preco * p.qtd).toFixed(2)}</span>
+        `;
+        lista.appendChild(div);
+      });
+
+      document.getElementById("total").innerText = "TOTAL GERAL: R$ " + total.toFixed(2);
+
+      if(limite > 0) {
+        let porcentagem = (total / limite) * 100;
+        document.getElementById("progress-bar").style.width = porcentagem + "%";
+
+        if(porcentagem >= 50 && porcentagem < 95) {
+          alert("Você já atingiu 50% do limite! (" + total.toFixed(2) + ")");
+        }
+        if(porcentagem >= 95) {
+          alert("Atenção! Você atingiu 95% do limite! (" + total.toFixed(2) + ")");
+        }
+      }
+    }
+
+    // OCR com Tesseract.js
+    function capturarOCR() {
+      let file = document.getElementById("ocrInput").files[0];
+      if(!file) {
+        alert("Selecione uma imagem da etiqueta!");
+        return;
+      }
+      Tesseract.recognize(file, 'por')
+        .then(({ data: { text } }) => {
+          console.log("Texto OCR:", text);
+          // Simples: procurar padrão "Produto - R$ valor"
+          let linhas = text.split("\n").map(l => l.trim()).filter(l => l);
+          if(linhas.length > 0) {
+            let nome = linhas[0];
+            let preco = 0;
+            let match = text.match(/(\d+[\.,]\d{2})/);
+            if(match) {
+              preco = parseFloat(match[1].replace(",", "."));
+            }
+            if(nome && preco > 0) {
+              produtos.push({nome, preco, qtd: 1});
+              atualizar();
+              alert("Produto capturado: " + nome + " - R$ " + preco.toFixed(2));
+            } else {
+              alert("Não foi possível identificar nome e preço.");
+            }
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          alert("Erro ao processar OCR.");
+        });
     }
   </script>
 </body>
 </html>
+
+   
