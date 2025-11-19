@@ -33,10 +33,13 @@
       border-radius:10px; text-align:center; background:#f9f9f9; color:#000;
     }
     .limit-input[readonly], .price-input[readonly] { cursor:not-allowed; }
+
+    /* Barra de progresso ajustada */
     .progress-container { display:flex; flex-direction:column; align-items:center; gap:4px; }
     .progress-bar { width:100%; height:20px; background:#eee; border-radius:10px; overflow:hidden; }
     .progress-fill { height:100%; width:0%; background:var(--verde); transition:width .2s, background .2s; }
     .progress-text { font-weight:700; font-size:1rem; color:#000; }
+
     .inputs-row { display:grid; grid-template-columns:7fr 3fr; gap:12px; margin:14px; }
     .text-input { padding:10px; border:1px solid #ddd; border-radius:10px; }
     .actions-row {
@@ -132,44 +135,25 @@
     const minusBtn=document.getElementById('minusBtn');
     const listEl=document.getElementById('list');
 
-    function setTarget(t){ state.target=t; }
-    priceInput.addEventListener('click',()=>setTarget('price'));
-    limitInput.addEventListener('click',()=>setTarget('limit'));
-    productInput.addEventListener('focus',()=>setTarget(null));
+    function recalc(){
+      const total = state.items.reduce((sum, i) => sum + i.price * i.qty, 0);
+      totalValue.textContent = total.toFixed(2).replace('.', ',');
+      const limit = state.limit || 0;
+      const pct = limit > 0 ? Math.min(100, Math.round((total/limit)*100)) : 0;
+      progressFill.style.width = pct + '%';
 
-    document.getElementById('keypad').addEventListener('click',e=>{
-      const k=e.target.closest('.key'); if(!k||!state.target)return;
-      const act=k.dataset.action, d=k.dataset.key;
-      if(act==='back'){ backspace(); return; }
-      if(act==='comma'){ return; }
-      if(d) insertDigit(d);
-    });
+      // cor dinâmica
+      if(pct >= 95){
+        progressFill.style.background = 'var(--vermelho)';
+      }else if(pct >= 50){
+        progressFill.style.background = 'var(--amarelo)';
+      }else{
+        progressFill.style.background = 'var(--verde)';
+      }
 
-    function insertDigit(d){
-      if(state.target==='price'){
-        const raw=priceInput.dataset.raw||'';
-        priceInput.dataset.raw=raw+d;
-        formatPrice(priceInput.dataset.raw);
-      }else{
-        limitInput.value=(limitInput.value||'')+d;
-        state.limit=parseInt(limitInput.value)||0;
-        recalc();
-      }
+      // texto da porcentagem
+      progressText.textContent = pct + '%';
     }
-    function backspace(){
-      if(state.target==='price'){
-        const raw=priceInput.dataset.raw||'';
-        priceInput.dataset.raw=raw.slice(0,-1);
-        formatPrice(priceInput.dataset.raw);
-      }else{
-        limitInput.value=(limitInput.value||'').slice(0,-1);
-        state.limit=parseInt(limitInput.value)||0;
-        recalc();
-      }
-    }
-    function formatPrice(raw){
-      if(!raw){ priceInput.value=''; return; }
-      if(raw.length===1){ priceInput.value='0,0'+raw; return; }
-      if(raw.length===2){ priceInput.value='0,'+raw; return; }
-      const reais=raw.slice(0,-2), cent=raw.slice(-2);
-      priceInput.value=reais+','+
+  </script>
+</body>
+</html>
