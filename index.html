@@ -6,9 +6,7 @@
   <title>LimiteCalc</title>
   <style>
     :root {
-      --verde: #0aa384;
-      --amarelo: #f5a623;
-      --vermelho: #d0021b;
+      --verde: #0aa384; /* verde da imagem enviada */
     }
     body {
       margin:0; font-family:Arial, sans-serif; background:#fff; color:#000;
@@ -33,13 +31,8 @@
       border-radius:10px; text-align:center; background:#f9f9f9; color:#000;
     }
     .limit-input[readonly], .price-input[readonly] { cursor:not-allowed; }
-
-    /* Barra de progresso com percentual */
-    .progress-container { display:flex; flex-direction:column; align-items:center; gap:4px; }
     .progress-bar { width:100%; height:20px; background:#eee; border-radius:10px; overflow:hidden; }
-    .progress-fill { height:100%; width:0%; background:var(--verde); transition:width .2s, background .2s; }
-    .progress-text { font-weight:700; font-size:1rem; color:#000; }
-
+    .progress-fill { height:100%; width:0%; background:var(--verde); transition:width .2s; }
     .inputs-row { display:grid; grid-template-columns:7fr 3fr; gap:12px; margin:14px; }
     .text-input { padding:10px; border:1px solid #ddd; border-radius:10px; }
     .actions-row {
@@ -48,7 +41,6 @@
     .key, .btn-add {
       background:#fff; border:1px solid #ddd; border-radius:10px;
       padding:18px; font-size:1.35rem; font-weight:900; color:#000; cursor:pointer;
-      user-select:none;
     }
     .btn-add { border:2px solid var(--verde); }
     .btn-capture {
@@ -61,24 +53,15 @@
       background-color:var(--verde);
       background-image:url('fundo-calculadora.png'); /* imagem verde com carrinho */
       background-size:cover; background-position:center;
-      -webkit-tap-highlight-color: transparent;
     }
     footer { margin-top:auto; background:#fff; border-top:1px solid #ddd; }
     .list-item {
-      display:grid; grid-template-columns:1fr 5fr 3fr 2fr; gap:8px;
-      padding:10px; border-bottom:1px solid #eee; align-items:center;
+      display:grid; grid-template-columns:1fr 5fr 2fr; gap:8px;
+      padding:10px; border-bottom:1px solid #eee;
     }
     .qty { font-weight:900; text-align:center; }
     .name { font-weight:700; }
-    .unit { text-align:right; }
-    .subtotal { font-weight:800; text-align:right; }
-    .qty-controls {
-      display:inline-flex; gap:6px; align-items:center; justify-content:center;
-    }
-    .qty-btn {
-      background:#fff; border:1px solid #ddd; border-radius:8px;
-      padding:6px 10px; font-weight:900; cursor:pointer;
-    }
+    .price { font-weight:800; text-align:right; }
   </style>
 </head>
 <body>
@@ -99,16 +82,13 @@
     </div>
     <div class="card">
       <div class="card-title">Progresso</div>
-      <div class="progress-container">
-        <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
-        <div id="progressText" class="progress-text">0%</div>
-      </div>
+      <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
     </div>
   </section>
 
   <section class="inputs-row">
-    <input id="productInput" class="text-input" placeholder="Nome do produto" inputmode="text" autocomplete="off"/>
-    <input id="priceInput" class="price-input" readonly placeholder="Preço" inputmode="numeric"/>
+    <input id="productInput" class="text-input" placeholder="Nome do produto"/>
+    <input id="priceInput" class="price-input" readonly placeholder="Preço"/>
   </section>
 
   <section class="actions-row">
@@ -133,194 +113,63 @@
   </footer>
 
   <script>
-    const state = { items:[], limit:0, target:'price', pendingQty:1 };
-    const productInput = document.getElementById('productInput');
-    const priceInput   = document.getElementById('priceInput');
-    const limitInput   = document.getElementById('limitInput');
-    const totalValue   = document.getElementById('totalValue');
-    const progressFill = document.getElementById('progressFill');
-    const progressText = document.getElementById('progressText');
-    const listEl       = document.getElementById('list');
-    const addBtn       = document.getElementById('addBtn');
-    const plusBtn      = document.getElementById('plusBtn');
-    const minusBtn     = document.getElementById('minusBtn');
+    const state = { items:[], limit:0, target:'price' };
+    const productInput=document.getElementById('productInput');
+    const priceInput=document.getElementById('priceInput');
+    const limitInput=document.getElementById('limitInput');
+    const totalValue=document.getElementById('totalValue');
+    const progressFill=document.getElementById('progressFill');
+    const addBtn=document.getElementById('addBtn');
+    const plusBtn=document.getElementById('plusBtn');
+    const minusBtn=document.getElementById('minusBtn');
+    const listEl=document.getElementById('list');
 
-    // Inicialização
-    document.addEventListener('DOMContentLoaded', () => {
-      if (!priceInput.dataset.raw) priceInput.dataset.raw = '';
-      setTarget('price');
-      renderList();
-      recalc();
-    });
-
-    // Seleção de alvo de digitação
     function setTarget(t){ state.target=t; }
     priceInput.addEventListener('click',()=>setTarget('price'));
     limitInput.addEventListener('click',()=>setTarget('limit'));
     productInput.addEventListener('focus',()=>setTarget(null));
 
-    // Teclado: clique e toque
-    const keypad = document.getElementById('keypad');
-    const handleKey = (e) => {
-      const k = e.target.closest('.key'); if(!k) return;
-      if(!state.target) return; // nomes de produto usam teclado do celular
-      e.preventDefault();
-      const act = k.dataset.action, d = k.dataset.key;
-      if (act === 'back') { backspace(); return; }
-      if (act === 'comma') { insertComma(); return; }
-      if (d) insertDigit(d);
-    };
-    keypad.addEventListener('click', handleKey, { passive:false });
-    keypad.addEventListener('touchstart', handleKey, { passive:false });
+    document.getElementById('keypad').addEventListener('click',e=>{
+      const k=e.target.closest('.key'); if(!k||!state.target)return;
+      const act=k.dataset.action, d=k.dataset.key;
+      if(act==='back'){ backspace(); return; }
+      if(act==='comma'){ return; }
+      if(d) insertDigit(d);
+    });
 
-    // Inserção de dígitos
     function insertDigit(d){
       if(state.target==='price'){
-        const raw = priceInput.dataset.raw || '';
-        priceInput.dataset.raw = raw + d;
+        const raw=priceInput.dataset.raw||'';
+        priceInput.dataset.raw=raw+d;
         formatPrice(priceInput.dataset.raw);
-      }else if(state.target==='limit'){
-        limitInput.value = (limitInput.value || '') + d;
-        state.limit = parseInt(limitInput.value) || 0;
+      }else{
+        limitInput.value=(limitInput.value||'')+d;
+        state.limit=parseInt(limitInput.value)||0;
         recalc();
       }
     }
-
-    // Backspace
     function backspace(){
       if(state.target==='price'){
-        const raw = priceInput.dataset.raw || '';
-        priceInput.dataset.raw = raw.slice(0,-1);
+        const raw=priceInput.dataset.raw||'';
+        priceInput.dataset.raw=raw.slice(0,-1);
         formatPrice(priceInput.dataset.raw);
-      }else if(state.target==='limit'){
-        limitInput.value = (limitInput.value || '').slice(0,-1);
-        state.limit = parseInt(limitInput.value) || 0;
+      }else{
+        limitInput.value=(limitInput.value||'').slice(0,-1);
+        state.limit=parseInt(limitInput.value)||0;
         recalc();
       }
     }
-
-    // Vírgula não é necessária (formatação cuida disso)
-    function insertComma(){ /* sem ação */ }
-
-    // Formatação de preço (sempre 2 casas decimais)
     function formatPrice(raw){
       if(!raw){ priceInput.value=''; return; }
       if(raw.length===1){ priceInput.value='0,0'+raw; return; }
       if(raw.length===2){ priceInput.value='0,'+raw; return; }
-      const reais = raw.slice(0,-2);
-      const cent  = raw.slice(-2);
-      priceInput.value = reais + ',' + cent;
+      const reais=raw.slice(0,-2), cent=raw.slice(-2);
+      priceInput.value=reais+','+cent;
     }
+    function parsePrice(s){ return parseFloat(s.replace('.','').replace(',','.'))||0; }
 
-    // Parse de preço "1.234,56" -> 1234.56
-    function parsePrice(s){
-      if(!s) return 0;
-      return parseFloat(s.replace(/\./g,'').replace(',','.')) || 0;
-    }
-
-    // Botões laterais +/- para quantidade a adicionar
-    plusBtn.addEventListener('click', () => {
-      state.pendingQty += 1;
-    });
-    minusBtn.addEventListener('click', () => {
-      state.pendingQty = Math.max(1, state.pendingQty - 1);
-    });
-
-    // Adicionar item
-    addBtn.addEventListener('click', () => {
-      const nome = productInput.value.trim();
-      const preco = parsePrice(priceInput.value);
-      const qty = state.pendingQty;
-
-      if(!nome || preco <= 0){
-        alert('Preencha nome e preço');
-        return;
-      }
-
-      const existing = state.items.find(i => i.name.toLowerCase() === nome.toLowerCase());
-      if(existing){
-        existing.qty += qty;
-      }else{
-        state.items.push({ name:nome, price:preco, qty:qty });
-      }
-
-      // limpar campos (mantendo comportamento que você aprovou)
-      productInput.value = '';
-      priceInput.value = '';
-      priceInput.dataset.raw = '';
-      state.pendingQty = 1;
-
-      renderList();
-      recalc();
-    });
-
-    // Renderização da lista inferior
-    function renderList(){
-      listEl.innerHTML = '';
-      state.items.forEach((item, idx) => {
-        const row = document.createElement('div');
-        row.className = 'list-item';
-
-        const qtyCell = document.createElement('div');
-        qtyCell.className = 'qty';
-        qtyCell.innerHTML = `
-          <div class="qty-controls">
-            <button class="qty-btn" data-act="minus">−</button>
-            <span>${item.qty}</span>
-            <button class="qty-btn" data-act="plus">+</button>
-          </div>
-        `;
-
-        const nameCell = document.createElement('div');
-        nameCell.className = 'name';
-        nameCell.textContent = item.name;
-
-        const unitCell = document.createElement('div');
-        unitCell.className = 'unit';
-        unitCell.textContent = 'R$ ' + item.price.toFixed(2).replace('.', ',');
-
-        const subtotalCell = document.createElement('div');
-        subtotalCell.className = 'subtotal';
-        const subtotal = item.price * item.qty;
-        subtotalCell.textContent = 'R$ ' + subtotal.toFixed(2).replace('.', ',');
-
-        row.appendChild(qtyCell);
-        row.appendChild(nameCell);
-        row.appendChild(unitCell);
-        row.appendChild(subtotalCell);
-
-        // eventos de quantidade min 1
-        row.addEventListener('click', (e) => {
-          const btn = e.target.closest('.qty-btn'); if(!btn) return;
-          const act = btn.dataset.act;
-          if(act === 'plus'){ item.qty += 1; }
-          if(act === 'minus'){ item.qty = Math.max(1, item.qty - 1); }
-          renderList();
-          recalc();
-        });
-
-        listEl.appendChild(row);
-      });
-    }
-
-    // Recalcular total e progresso
-    function recalc(){
-      const total = state.items.reduce((sum, i) => sum + (i.price * i.qty), 0);
-      totalValue.textContent = total.toFixed(2).replace('.', ',');
-
-      const limit = state.limit || 0;
-      const pct = limit > 0 ? Math.min(100, Math.round((total/limit)*100)) : 0;
-
-      progressFill.style.width = pct + '%';
-      if(pct >= 95){
-        progressFill.style.background = 'var(--vermelho)';
-      }else if(pct >= 50){
-        progressFill.style.background = 'var(--amarelo)';
-      }else{
-        progressFill.style.background = 'var(--verde)';
-      }
-      progressText.textContent = pct + '%';
-    }
-  </script>
-</body>
-</html>
+    addBtn.addEventListener('click',()=>{
+      const nome=productInput.value.trim();
+      const preco=parsePrice(priceInput.value);
+      if(!nome||preco<=0){ alert('Preencha nome e preço'); return; }
+      const ex=state.items.find(i=>i.name.toLowerCase()===nome.to
