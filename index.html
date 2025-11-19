@@ -1,18 +1,101 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Calculadora Inteligente</title>
-<link rel="manifest" href="manifest.json" />
-<meta name="theme-color" content="#1abc9c" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calculadora Inteligente</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#1abc9c" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      text-align: center;
+      padding: 20px;
+    }
+    h2 {
+      color: #1abc9c;
+    }
+    #display {
+      width: 100%;
+      max-width: 300px;
+      margin: 20px auto;
+      font-size: 2em;
+      padding: 10px;
+      background: #fff;
+      border: 2px solid #1abc9c;
+      border-radius: 8px;
+    }
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      max-width: 300px;
+      margin: auto;
+    }
+    button {
+      padding: 20px;
+      font-size: 1.2em;
+      border: none;
+      border-radius: 8px;
+      background-color: #1abc9c;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #16a085;
+    }
+  </style>
 </head>
 <body>
-<h2>Calculadora Inteligente</h2>
-<script>
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("service-worker.js");
-}
-</script>
+  <h2>Calculadora Inteligente</h2>
+  <div id="display">0</div>
+  <div class="buttons">
+    <button onclick="press('7')">7</button>
+    <button onclick="press('8')">8</button>
+    <button onclick="press('9')">9</button>
+    <button onclick="press('/')">÷</button>
+    <button onclick="press('4')">4</button>
+    <button onclick="press('5')">5</button>
+    <button onclick="press('6')">6</button>
+    <button onclick="press('*')">×</button>
+    <button onclick="press('1')">1</button>
+    <button onclick="press('2')">2</button>
+    <button onclick="press('3')">3</button>
+    <button onclick="press('-')">−</button>
+    <button onclick="press('0')">0</button>
+    <button onclick="press('.')">.</button>
+    <button onclick="calculate()">=</button>
+    <button onclick="press('+')">+</button>
+    <button onclick="clearDisplay()" style="grid-column: span 4; background-color: #e74c3c;">C</button>
+  </div>
+
+  <script>
+    let current = "";
+
+    function press(value) {
+      current += value;
+      document.getElementById("display").innerText = current;
+    }
+
+    function calculate() {
+      try {
+        current = eval(current).toString();
+        document.getElementById("display").innerText = current;
+      } catch {
+        document.getElementById("display").innerText = "Erro";
+        current = "";
+      }
+    }
+
+    function clearDisplay() {
+      current = "";
+      document.getElementById("display").innerText = "0";
+    }
+
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("service-worker.js");
+    }
+  </script>
 </body>
 </html>
