@@ -5,399 +5,171 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>LimiteCalc</title>
   <style>
-    :root{
-      /* Verde da imagem enviada (ajustável se necessário) */
-      --green: #0aa384;
-      --bg: #ffffff;
-      --text: #000000;
-      --border: #dddddd;
-      --card: #ffffff;
-      --calc-bg-image: url('./carrinho-bg.png'); /* SUBSTITUA PELO CAMINHO DA SUA IMAGEM */
+    :root {
+      --verde: #0aa384; /* verde da imagem enviada */
     }
-    *{box-sizing:border-box}
-    body{margin:0;font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial; background:var(--bg); color:var(--text); display:flex; flex-direction:column; min-height:100vh}
-    .container{max-width:720px;margin:0 auto;padding:12px;width:100%}
-    header{text-align:center;padding:8px 0 4px}
-    .title{display:inline-flex;align-items:center;gap:12px;font-weight:900;font-size:2.4rem; line-height:1}
-    .cart-icon svg{width:48px;height:48px;fill:#000}
-    .total-line{margin-top:8px;font-size:1.35rem;font-weight:900;color:var(--green)}
-    .limit-area{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0}
-    .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px}
-    .card-title{font-weight:800;color:var(--green);margin-bottom:8px}
-    .limit-input{width:100%;max-width:140px;font-size:1.4rem;padding:10px;border:1px solid var(--border);border-radius:10px;text-align:center;background:#f9f9f9;color:#000}
-    .progress-bar{width:100%;height:18px;background:#e9e9e9;border-radius:10px;overflow:hidden;border:1px solid var(--border)}
-    .progress-fill{height:100%;width:0%;background:var(--green);transition:width 200ms ease}
-    .inputs-row{display:grid;grid-template-columns:7fr 3fr;gap:12px;margin-bottom:10px}
-    .text-input,.price-input{width:100%;font-size:1rem;padding:10px;border:1px solid var(--border);border-radius:10px;color:#000;background:#fff}
-    .price-input[readonly], .limit-input[readonly]{background:#f9f9f9;cursor:not-allowed}
-    .actions-row{display:grid;grid-template-columns:1fr 2fr 1fr;gap:12px;align-items:center;margin:8px 0 12px}
-    .key-like{background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;font-size:1.25rem;font-weight:800;color:#000;cursor:pointer}
-    .btn-add{background:#fff;border:2px solid var(--green);border-radius:12px;padding:12px;font-weight:800;color:#000;cursor:pointer}
-    .tools-row{margin-top:6px}
-    .btn-capture{background:var(--green);color:#000;border:2px solid var(--green);border-radius:12px;padding:12px;font-weight:800;cursor:pointer;width:100%}
-    .keypad{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0;padding:20px;border-radius:12px;background-color:var(--green);background-image:var(--calc-bg-image);background-size:cover;background-position:center;background-repeat:no-repeat}
-    .key{background:#fff;border:1px solid var(--border);border-radius:10px;padding:18px;text-align:center;font-size:1.35rem;font-weight:900;color:#000;cursor:pointer;user-select:none}
-    footer{margin-top:auto;background:#fff;border-top:1px solid var(--border)}
-    .list{max-height:260px;overflow:auto}
-    .list-item{display:grid;grid-template-columns:1fr 5fr 2fr;gap:8px;padding:10px;border-bottom:1px solid #eee}
-    .qty{font-weight:900;text-align:center}
-    .name{font-weight:700}
-    .price{font-weight:800;text-align:right}
-    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.35);display:none;align-items:center;justify-content:center}
-    .modal{background:#fff;border-radius:12px;padding:16px;max-width:360px;width:100%}
-    .hidden{display:none}
+    body {
+      margin:0; font-family:Arial, sans-serif; background:#fff; color:#000;
+      display:flex; flex-direction:column; min-height:100vh;
+    }
+    header { text-align:center; padding:10px 0; }
+    .title {
+      display:inline-flex; align-items:center; gap:12px;
+      font-size:2.8rem; font-weight:900;
+    }
+    .title img { height:48px; }
+    .total-line {
+      margin-top:8px; font-size:1.6rem; font-weight:900; color:var(--verde);
+    }
+    .limit-area {
+      display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:14px;
+    }
+    .card { border:1px solid #ddd; border-radius:12px; padding:12px; background:#fff; }
+    .card-title { font-weight:900; color:var(--verde); margin-bottom:8px; }
+    .limit-input, .price-input {
+      width:100%; font-size:1.4rem; padding:10px; border:1px solid #ddd;
+      border-radius:10px; text-align:center; background:#f9f9f9; color:#000;
+    }
+    .limit-input[readonly], .price-input[readonly] { cursor:not-allowed; }
+    .progress-bar { width:100%; height:20px; background:#eee; border-radius:10px; overflow:hidden; }
+    .progress-fill { height:100%; width:0%; background:var(--verde); transition:width .2s; }
+    .inputs-row { display:grid; grid-template-columns:7fr 3fr; gap:12px; margin:14px; }
+    .text-input { padding:10px; border:1px solid #ddd; border-radius:10px; }
+    .actions-row {
+      display:grid; grid-template-columns:1fr 2fr 1fr; gap:12px; margin:14px;
+    }
+    .key, .btn-add {
+      background:#fff; border:1px solid #ddd; border-radius:10px;
+      padding:18px; font-size:1.35rem; font-weight:900; color:#000; cursor:pointer;
+    }
+    .btn-add { border:2px solid var(--verde); }
+    .btn-capture {
+      background:var(--verde); color:#000; border:2px solid var(--verde);
+      border-radius:12px; padding:12px; font-weight:900; cursor:pointer; width:100%;
+    }
+    .keypad {
+      display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:14px;
+      padding:20px; border-radius:12px;
+      background-color:var(--verde);
+      background-image:url('fundo-calculadora.png'); /* imagem verde com carrinho */
+      background-size:cover; background-position:center;
+    }
+    footer { margin-top:auto; background:#fff; border-top:1px solid #ddd; }
+    .list-item {
+      display:grid; grid-template-columns:1fr 5fr 2fr; gap:8px;
+      padding:10px; border-bottom:1px solid #eee;
+    }
+    .qty { font-weight:900; text-align:center; }
+    .name { font-weight:700; }
+    .price { font-weight:800; text-align:right; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <div class="title">
-        <span>LimiteCalc</span>
-        <span class="cart-icon">
-          <!-- Ícone de carrinho preto sem texto -->
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M7 18a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm10 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM6 6h13l-1.5 6h-9.9l-.6-3H4V6h2z"/>
-          </svg>
-        </span>
-      </div>
-      <div id="totalLine" class="total-line">
-        TOTAL GERAL: R$ <span id="totalValue">0,00</span>
-      </div>
-    </header>
+  <header>
+    <div class="title">
+      <span>LimiteCalc</span>
+      <img src="carrinho-topo.png" alt="Carrinho"/>
+    </div>
+    <div id="totalLine" class="total-line">
+      TOTAL GERAL: R$ <span id="totalValue">0,00</span>
+    </div>
+  </header>
 
-    <section class="limit-area">
-      <div class="card">
-        <div class="card-title">Meu Limite</div>
-        <input id="limitInput" class="limit-input" readonly />
-      </div>
-      <div class="card">
-        <div class="card-title">Progresso</div>
-        <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
-      </div>
-    </section>
+  <section class="limit-area">
+    <div class="card">
+      <div class="card-title">Meu Limite</div>
+      <input id="limitInput" class="limit-input" readonly />
+    </div>
+    <div class="card">
+      <div class="card-title">Progresso</div>
+      <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
+    </div>
+  </section>
 
-    <section class="inputs-row">
-      <input id="productInput" class="text-input" placeholder="Nome do produto"/>
-      <input id="priceInput" class="price-input" readonly placeholder="Preço"/>
-    </section>
+  <section class="inputs-row">
+    <input id="productInput" class="text-input" placeholder="Nome do produto"/>
+    <input id="priceInput" class="price-input" readonly placeholder="Preço"/>
+  </section>
 
-    <section class="actions-row">
-      <button id="minusBtn" class="key-like">−</button>
-      <button id="addBtn" class="btn-add">Adicionar</button>
-      <button id="plusBtn" class="key-like">+</button>
-    </section>
+  <section class="actions-row">
+    <button id="minusBtn" class="key">−</button>
+    <button id="addBtn" class="btn-add">Adicionar</button>
+    <button id="plusBtn" class="key">+</button>
+  </section>
 
-    <section class="tools-row">
-      <button id="scanBtn" class="btn-capture">Capturar etiqueta</button>
-    </section>
+  <section class="tools-row" style="margin:14px;">
+    <button id="scanBtn" class="btn-capture">Capturar etiqueta</button>
+  </section>
 
-    <section class="keypad" id="keypad">
-      <div class="key" data-key="1">1</div>
-      <div class="key" data-key="2">2</div>
-      <div class="key" data-key="3">3</div>
-      <div class="key" data-key="4">4</div>
-      <div class="key" data-key="5">5</div>
-      <div class="key" data-key="6">6</div>
-      <div class="key" data-key="7">7</div>
-      <div class="key" data-key="8">8</div>
-      <div class="key" data-key="9">9</div>
-      <div class="key" data-key="0">0</div>
-      <div class="key" data-action="comma">,</div>
-      <div class="key" data-action="back">⌫</div>
-    </section>
-  </div>
+  <section class="keypad" id="keypad">
+    <div class="key" data-key="1">1</div><div class="key" data-key="2">2</div><div class="key" data-key="3">3</div>
+    <div class="key" data-key="4">4</div><div class="key" data-key="5">5</div><div class="key" data-key="6">6</div>
+    <div class="key" data-key="7">7</div><div class="key" data-key="8">8</div><div class="key" data-key="9">9</div>
+    <div class="key" data-key="0">0</div><div class="key" data-action="comma">,</div><div class="key" data-action="back">⌫</div>
+  </section>
 
   <footer>
-    <div id="list" class="list"></div>
+    <div id="list"></div>
   </footer>
 
-  <div id="modalBackdrop" class="modal-backdrop">
-    <div class="modal">
-      <h4>Deseja deletar o item?</h4>
-      <p id="modalText"></p>
-      <div style="display:flex;gap:8px;justify-content:flex-end;">
-        <button id="modalNo" class="key-like">Não</button>
-        <button id="modalYes" class="key-like">Sim</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- OCR -->
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
   <script>
-    const state = {
-      items: [],
-      limit: 0,
-      targetField: 'price' // 'price' | 'limit'
-    };
+    const state = { items:[], limit:0, target:'price' };
+    const productInput=document.getElementById('productInput');
+    const priceInput=document.getElementById('priceInput');
+    const limitInput=document.getElementById('limitInput');
+    const totalValue=document.getElementById('totalValue');
+    const progressFill=document.getElementById('progressFill');
+    const addBtn=document.getElementById('addBtn');
+    const plusBtn=document.getElementById('plusBtn');
+    const minusBtn=document.getElementById('minusBtn');
+    const listEl=document.getElementById('list');
 
-    const productInput = document.getElementById('productInput');
-    const priceInput = document.getElementById('priceInput');
-    const limitInput = document.getElementById('limitInput');
-    const totalValue = document.getElementById('totalValue');
-    const progressFill = document.getElementById('progressFill');
-    const addBtn = document.getElementById('addBtn');
-    const plusBtn = document.getElementById('plusBtn');
-    const minusBtn = document.getElementById('minusBtn');
-    const listEl = document.getElementById('list');
-    const scanBtn = document.getElementById('scanBtn');
+    function setTarget(t){ state.target=t; }
+    priceInput.addEventListener('click',()=>setTarget('price'));
+    limitInput.addEventListener('click',()=>setTarget('limit'));
+    productInput.addEventListener('focus',()=>setTarget(null));
 
-    // Foco lógico: preço por padrão
-    setTarget('price');
-
-    priceInput.addEventListener('click', () => setTarget('price'));
-    limitInput.addEventListener('click', () => setTarget('limit'));
-
-    productInput.addEventListener('focus', () => setTarget(null)); // teclado do celular só para nome
-
-    function setTarget(target){
-      state.targetField = target;
-      // Destaque visual opcional
-      priceInput.style.outline = target === 'price' ? '2px solid ' + getComputedStyle(document.documentElement).getPropertyValue('--green') : 'none';
-      limitInput.style.outline = target === 'limit' ? '2px solid ' + getComputedStyle(document.documentElement).getPropertyValue('--green') : 'none';
-    }
-
-    // Teclado da calculadora
-    document.getElementById('keypad').addEventListener('click', (e) => {
-      const keyEl = e.target.closest('.key');
-      if(!keyEl) return;
-
-      if(!state.targetField){
-        // Se o alvo for nulo, significa que o usuário está digitando nome; ignorar teclas numéricas
-        return;
-      }
-
-      const action = keyEl.dataset.action;
-      const key = keyEl.dataset.key;
-
-      if(action === 'back'){
-        backspaceTarget();
-        return;
-      }
-      if(action === 'comma'){
-        insertComma();
-        return;
-      }
-      if(key !== undefined){
-        insertDigit(key);
-      }
+    document.getElementById('keypad').addEventListener('click',e=>{
+      const k=e.target.closest('.key'); if(!k||!state.target)return;
+      const act=k.dataset.action, d=k.dataset.key;
+      if(act==='back'){ backspace(); return; }
+      if(act==='comma'){ return; }
+      if(d) insertDigit(d);
     });
-
-    function getTargetInput(){
-      return state.targetField === 'price' ? priceInput : limitInput;
-    }
 
     function insertDigit(d){
-      const el = getTargetInput();
-      // Apenas números: para preço, vamos manter formatação com vírgula automática
-      if(state.targetField === 'price'){
-        const onlyDigits = (el.dataset.raw || '');
-        el.dataset.raw = onlyDigits + String(d);
-        formatPriceFromRaw(el.dataset.raw);
+      if(state.target==='price'){
+        const raw=priceInput.dataset.raw||'';
+        priceInput.dataset.raw=raw+d;
+        formatPrice(priceInput.dataset.raw);
       }else{
-        el.value = (el.value || '') + String(d);
-        state.limit = parseInt(el.value || '0', 10) || 0;
+        limitInput.value=(limitInput.value||'')+d;
+        state.limit=parseInt(limitInput.value)||0;
         recalc();
       }
     }
-
-    function insertComma(){
-      if(state.targetField === 'price'){
-        const raw = elRaw();
-        if(raw.length < 1) return;
-        // vírgula é virtual: já formatamos sempre com 2 centavos pelo raw
-        // nada a fazer aqui, pois a vírgula é automática conforme os dígitos
-      }
-    }
-
-    function backspaceTarget(){
-      const el = getTargetInput();
-      if(state.targetField === 'price'){
-        const raw = el.dataset.raw || '';
-        if(raw.length > 0){
-          el.dataset.raw = raw.slice(0, -1);
-          formatPriceFromRaw(el.dataset.raw);
-        }
+    function backspace(){
+      if(state.target==='price'){
+        const raw=priceInput.dataset.raw||'';
+        priceInput.dataset.raw=raw.slice(0,-1);
+        formatPrice(priceInput.dataset.raw);
       }else{
-        el.value = (el.value || '').slice(0, -1);
-        state.limit = parseInt(el.value || '0', 10) || 0;
+        limitInput.value=(limitInput.value||'').slice(0,-1);
+        state.limit=parseInt(limitInput.value)||0;
         recalc();
       }
     }
-
-    function elRaw(){
-      return (getTargetInput().dataset.raw || '');
+    function formatPrice(raw){
+      if(!raw){ priceInput.value=''; return; }
+      if(raw.length===1){ priceInput.value='0,0'+raw; return; }
+      if(raw.length===2){ priceInput.value='0,'+raw; return; }
+      const reais=raw.slice(0,-2), cent=raw.slice(-2);
+      priceInput.value=reais+','+cent;
     }
+    function parsePrice(s){ return parseFloat(s.replace('.','').replace(',','.'))||0; }
 
-    function formatPriceFromRaw(rawDigits){
-      // rawDigits: apenas números
-      if(rawDigits.length === 0){
-        priceInput.value = '';
-        return;
-      }
-      if(rawDigits.length === 1){
-        priceInput.value = '0,0' + rawDigits;
-      }else if(rawDigits.length === 2){
-        priceInput.value = '0,' + rawDigits;
-      }else{
-        const reais = rawDigits.slice(0, -2);
-        const centavos = rawDigits.slice(-2);
-        priceInput.value = reais + ',' + centavos;
-      }
-    }
-
-    function parsePrice(str){
-      const n = parseFloat(String(str).replace('.', '').replace(',', '.'));
-      return isNaN(n) ? 0 : n;
-    }
-
-    // Adicionar item
-    addBtn.addEventListener('click', () => {
-      const name = (productInput.value || '').trim();
-      const price = parsePrice(priceInput.value);
-
-      if(!name || price <= 0){
-        alert('Preencha o nome e o preço.');
-        return;
-      }
-
-      const existing = state.items.find(i => i.name.toLowerCase() === name.toLowerCase());
-      if(existing){
-        existing.qty += 1;
-      }else{
-        state.items.push({ id: crypto.randomUUID(), name, price, qty: 1 });
-      }
-
-      // limpar preço para próximo item e manter alvo em preço
-      priceInput.value = '';
-      priceInput.dataset.raw = '';
-      setTarget('price');
-
-      renderList();
-      recalc();
-    });
-
-    // Botões + e −
-    plusBtn.addEventListener('click', () => adjustQty(+1));
-    minusBtn.addEventListener('click', () => adjustQty(-1));
-
-    function adjustQty(delta){
-      if(state.items.length === 0) return;
-      // Ajusta do último item adicionado
-      const item = state.items[state.items.length - 1];
-      item.qty = Math.max(1, item.qty + delta);
-      renderList();
-      recalc();
-    }
-
-    // Renderizar lista
-    function renderList(){
-      listEl.innerHTML = '';
-      state.items.forEach(item => {
-        const row = document.createElement('div');
-        row.className = 'list-item';
-        const qty = document.createElement('div'); qty.className = 'qty'; qty.textContent = item.qty;
-        const name = document.createElement('div'); name.className = 'name'; name.textContent = item.name;
-        const price = document.createElement('div'); price.className = 'price';
-        price.textContent = 'R$ ' + (item.price * item.qty).toFixed(2).replace('.', ',');
-
-        row.appendChild(qty); row.appendChild(name); row.appendChild(price);
-        // Clique para solicitar exclusão
-        row.addEventListener('click', () => openDeleteModal(item));
-        listEl.appendChild(row);
-      });
-    }
-
-    // Total e progresso
-    function recalc(){
-      const total = state.items.reduce((sum, i) => sum + i.price * i.qty, 0);
-      totalValue.textContent = total.toFixed(2).replace('.', ',');
-      const limit = state.limit || 0;
-      const pct = limit > 0 ? Math.min(100, Math.round((total/limit)*100)) : 0;
-      progressFill.style.width = pct + '%';
-    }
-
-    // Modal de exclusão
-    const modalBackdrop = document.getElementById('modalBackdrop');
-    const modalText = document.getElementById('modalText');
-    const modalNo = document.getElementById('modalNo');
-    const modalYes = document.getElementById('modalYes');
-    let itemToDelete = null;
-
-    function openDeleteModal(item){
-      itemToDelete = item;
-      modalText.textContent = `Excluir "${item.name}" (qty ${item.qty})?`;
-      modalBackdrop.style.display = 'flex';
-    }
-    modalNo.addEventListener('click', () => {
-      itemToDelete = null;
-      modalBackdrop.style.display = 'none';
-    });
-    modalYes.addEventListener('click', () => {
-      if(itemToDelete){
-        state.items = state.items.filter(i => i.id !== itemToDelete.id);
-        renderList();
-        recalc();
-      }
-      itemToDelete = null;
-      modalBackdrop.style.display = 'none';
-    });
-
-    // Captura automática de etiqueta (OCR)
-    let mediaStream = null;
-    async function openCamera(){
-      mediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-      const video = document.createElement('video');
-      video.autoplay = true; video.playsInline = true; video.srcObject = mediaStream;
-      document.body.appendChild(video);
-      return video;
-    }
-    function stopCamera(video){
-      if(mediaStream){ mediaStream.getTracks().forEach(t=>t.stop()); mediaStream=null; }
-      if(video){ video.remove(); }
-    }
-    async function captureAndProcess(video){
-      await new Promise(r=>setTimeout(r, 800));
-      const w = video.videoWidth, h = video.videoHeight;
-      const canvas = document.createElement('canvas'); canvas.width=w; canvas.height=h;
-      const ctx = canvas.getContext('2d'); ctx.drawImage(video,0,0,w,h);
-      const dataURL = canvas.toDataURL('image/png');
-      const result = await Tesseract.recognize(dataURL, 'por');
-      const texto = result.data.text || '';
-
-      // Preço
-      const precoMatch = texto.match(/R\$?\s?(\d{1,3}(?:[.\s]\d{3})*(?:[.,]\d{2})|\d+[.,]\d{2})/);
-      const precoStr = precoMatch ? precoMatch[1] : '';
-      const preco = precoStr ? parseFloat(precoStr.replace(/\./g,'').replace(',', '.')) : 0;
-
-      // Nome (heurística simples: primeira linha longa antes do preço)
-      let nome = texto;
-      if(precoMatch){
-        nome = texto.slice(0, precoMatch.index).split('\n').map(s=>s.trim()).filter(Boolean).slice(-1)[0] || 'Produto';
-      }else{
-        nome = (texto.split('\n').map(s=>s.trim()).filter(Boolean)[0]) || 'Produto';
-      }
-
-      if(nome && preco>0){
-        // Preenche campos (nome via teclado do celular, preço via calculadora)
-        productInput.value = nome;
-        // carregar preço na calculadora (raw)
-        const raw = String(Math.round(preco*100));
-        priceInput.dataset.raw = raw;
-        formatPriceFromRaw(raw);
-      }else{
-        alert('Não foi possível identificar nome e preço na etiqueta.');
-      }
-    }
-    scanBtn.addEventListener('click', async () => {
-      try{
-        const video = await openCamera();
-        await captureAndProcess(video);
-        stopCamera(video);
-      }catch(err){
-        alert('Erro ao acessar a câmera: ' + err);
-      }
-    });
-  </script>
-</body>
-</html>
+    addBtn.addEventListener('click',()=>{
+      const nome=productInput.value.trim();
+      const preco=parsePrice(priceInput.value);
+      if(!nome||preco<=0){ alert('Preencha nome e preço'); return; }
+      const ex=state.items.find(i=>i.name.toLowerCase()===nome.to
