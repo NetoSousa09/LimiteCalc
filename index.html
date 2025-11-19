@@ -6,7 +6,9 @@
   <title>LimiteCalc</title>
   <style>
     :root {
-      --verde: #0aa384; /* verde da imagem enviada */
+      --verde: #0aa384;
+      --amarelo: #f5a623;
+      --vermelho: #d0021b;
     }
     body {
       margin:0; font-family:Arial, sans-serif; background:#fff; color:#000;
@@ -31,8 +33,10 @@
       border-radius:10px; text-align:center; background:#f9f9f9; color:#000;
     }
     .limit-input[readonly], .price-input[readonly] { cursor:not-allowed; }
+    .progress-container { display:flex; flex-direction:column; align-items:center; gap:4px; }
     .progress-bar { width:100%; height:20px; background:#eee; border-radius:10px; overflow:hidden; }
-    .progress-fill { height:100%; width:0%; background:var(--verde); transition:width .2s; }
+    .progress-fill { height:100%; width:0%; background:var(--verde); transition:width .2s, background .2s; }
+    .progress-text { font-weight:700; font-size:1rem; color:#000; }
     .inputs-row { display:grid; grid-template-columns:7fr 3fr; gap:12px; margin:14px; }
     .text-input { padding:10px; border:1px solid #ddd; border-radius:10px; }
     .actions-row {
@@ -82,7 +86,10 @@
     </div>
     <div class="card">
       <div class="card-title">Progresso</div>
-      <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
+      <div class="progress-container">
+        <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
+        <div id="progressText" class="progress-text">0%</div>
+      </div>
     </div>
   </section>
 
@@ -119,6 +126,7 @@
     const limitInput=document.getElementById('limitInput');
     const totalValue=document.getElementById('totalValue');
     const progressFill=document.getElementById('progressFill');
+    const progressText=document.getElementById('progressText');
     const addBtn=document.getElementById('addBtn');
     const plusBtn=document.getElementById('plusBtn');
     const minusBtn=document.getElementById('minusBtn');
@@ -164,12 +172,4 @@
       if(raw.length===1){ priceInput.value='0,0'+raw; return; }
       if(raw.length===2){ priceInput.value='0,'+raw; return; }
       const reais=raw.slice(0,-2), cent=raw.slice(-2);
-      priceInput.value=reais+','+cent;
-    }
-    function parsePrice(s){ return parseFloat(s.replace('.','').replace(',','.'))||0; }
-
-    addBtn.addEventListener('click',()=>{
-      const nome=productInput.value.trim();
-      const preco=parsePrice(priceInput.value);
-      if(!nome||preco<=0){ alert('Preencha nome e preço'); return; }
-      const ex=state.items.find(i=>i.name.toLowerCase()===nome.to
+      priceInput.value=reais+','+
