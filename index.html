@@ -2,124 +2,111 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>LimiteCalc - Calculadora Inteligente</title>
-  <meta name="theme-color" content="#1abc9c" />
-  <!-- OCR -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LimiteCalc</title>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@2.1.5/dist/tesseract.min.js"></script>
-  <!-- PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
-    :root{
-      --verde:#1abc9c; --amarelo:#f1c40f; --vermelho:#e74c3c;
-      --cinza:#f4f4f4; --branco:#ffffff; --preto:#000000;
-    }
-    *{box-sizing:border-box}
-    body{margin:0; font-family:Arial, sans-serif; background:var(--cinza); color:#222;}
-    .app{display:flex; flex-direction:column; height:100vh; max-width:600px; margin:0 auto; position:relative;}
-
-    /* Imagem central LimiteCalc */
-    .logo-central{display:flex; justify-content:center; margin:10px;}
-    .logo-central img{width:80%; max-width:400px;}
-
-    header{text-align:center; padding:10px;}
-    .title{display:flex; align-items:center; justify-content:center; gap:10px;}
-    .title h1{margin:0; font-size:2rem; font-weight:800; color:var(--verde);}
-    .title img{width:40px; height:auto;}
-
-    .total-geral{margin-top:6px; font-weight:700; font-size:1.6rem;}
-    .limite-row{display:flex; gap:10px; justify-content:center; padding:8px;}
-    .limite-box{flex:1; max-width:120px; background:var(--branco); border:2px solid var(--verde); border-radius:10px; padding:6px;}
-    .limite-box label{color:var(--verde); font-weight:700; font-size:0.9rem;}
-    .limite-input{width:100%; font-size:1.2rem; text-align:center; border:1px solid #ddd; border-radius:8px;}
-
-    .progress-wrap{flex:1; max-width:210px;}
-    .progress{width:100%; height:22px; background:#eaeaea; border-radius:12px; overflow:hidden; border:1px solid #ddd; position:relative;}
-    .progress-bar{height:100%; width:0%; background:var(--verde); transition:width .3s;}
-    .progress-text{position:absolute; top:0; left:50%; transform:translateX(-50%); font-size:0.9rem; font-weight:700; color:#000;}
-
-    .produto-row{display:flex; gap:10px; padding:8px;}
-    .qtd-box{flex:2;}
-    .qtd-box input{width:100%; text-align:center; font-size:1rem; border:1px solid #ccc; border-radius:8px;}
-    .nome{flex:5;} .preco{flex:3;}
-    .produto-row input{width:100%; padding:10px; font-size:1rem; border:1px solid #ccc; border-radius:8px;}
-
-    .add-row{padding:8px;}
-    .btn-add{width:100%; display:flex; justify-content:space-between; align-items:center;
-      background:var(--verde); color:#fff; border:none; border-radius:10px; font-size:1.1rem;
-      padding:12px; cursor:pointer; font-weight:700;}
-    .btn-add span{background:rgba(255,255,255,.2); border-radius:8px; padding:5px 10px;}
-
-    .ocr-row{text-align:center; padding:8px;}
-    .btn-ocr{background:#222; color:#fff; border:none; border-radius:10px; padding:12px 16px; font-weight:700; cursor:pointer;}
-
-    .keypad{flex:1; padding:8px; display:grid; grid-template-columns:repeat(3,1fr); gap:10px;}
-    .key{background:#fff; border:1px solid #ddd; border-radius:10px; padding:16px 0; font-size:1.4rem; font-weight:700; text-align:center; cursor:pointer;}
-
-    footer{background:#fff; border-top:2px solid var(--verde); max-height:40vh; overflow:auto;}
-    .item{display:grid; grid-template-columns:60px 1fr 100px; align-items:center; gap:10px; padding:10px; border-bottom:1px solid #eee;}
-    .qtd-badge{background:#eee; border-radius:10px; text-align:center; padding:8px; font-weight:700;}
-    .item-nome{cursor:pointer;} .item-preco{text-align:right;}
-
-    .modal{position:fixed; inset:0; background:rgba(0,0,0,.35); display:none; align-items:center; justify-content:center;}
-    .modal .box{background:#fff; border-radius:12px; padding:16px; max-width:360px;}
-    .actions{display:flex; gap:10px; justify-content:flex-end;}
-    .btn{padding:10px 14px; border:none; border-radius:8px; font-weight:700; cursor:pointer;}
-    .btn-no{background:#eaeaea;} .btn-yes{background:var(--vermelho); color:#fff;}
-
-    .extra-buttons{text-align:center; padding:10px;}
-    .extra-buttons button{margin:5px; padding:10px 14px; border:none; border-radius:8px; font-weight:700; cursor:pointer;}
-    .btn-pdf{background:var(--verde); color:#fff;} .btn-clear{background:var(--vermelho); color:#fff;}
+    :root{--verde:#1abc9c;--amarelo:#f1c40f;--vermelho:#e74c3c;}
+    body{margin:0;font-family:Arial;background:#f4f4f4;}
+    .logo-central{text-align:center;margin:10px;}
+    .logo-central img{width:80%;max-width:400px;}
+    header{text-align:center;}
+    .title{display:flex;align-items:center;justify-content:center;gap:10px;}
+    .title h1{color:var(--verde);margin:0;font-size:2rem;}
+    .title img{width:40px;}
+    .total-geral{font-size:1.6rem;font-weight:700;margin:10px;}
+    .limite-row{display:flex;justify-content:center;gap:10px;}
+    .limite-box{border:2px solid var(--verde);border-radius:8px;padding:5px;}
+    .limite-input{text-align:center;font-size:1.2rem;width:80px;}
+    .progress{flex:1;position:relative;height:22px;background:#ddd;border-radius:12px;overflow:hidden;}
+    .progress-bar{height:100%;width:0%;background:var(--verde);}
+    .progress-text{position:absolute;top:0;left:50%;transform:translateX(-50%);font-size:0.9rem;font-weight:700;}
+    .produto-row{display:flex;gap:10px;margin:10px;}
+    .qtd-box input{width:60px;text-align:center;}
+    .nome input,.preco input{width:100%;padding:8px;}
+    .add-row{text-align:center;margin:10px;}
+    .btn-add{background:var(--verde);color:#fff;padding:10px 20px;border:none;border-radius:8px;font-weight:700;}
+    .ocr-row{text-align:center;margin:10px;}
+    .btn-ocr{background:#222;color:#fff;padding:10px 20px;border:none;border-radius:8px;}
+    footer{background:#fff;border-top:2px solid var(--verde);max-height:40vh;overflow:auto;}
+    .item{display:grid;grid-template-columns:60px 1fr 100px;gap:10px;padding:10px;border-bottom:1px solid #eee;}
+    .qtd-badge{background:#eee;padding:5px;text-align:center;}
+    .item-nome{cursor:pointer;}
+    .extra-buttons{text-align:center;margin:10px;}
+    .extra-buttons button{margin:5px;padding:10px;border:none;border-radius:8px;font-weight:700;}
+    .btn-pdf{background:var(--verde);color:#fff;}
+    .btn-clear{background:var(--vermelho);color:#fff;}
+    .modal{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;}
+    .modal .box{background:#fff;padding:20px;border-radius:8px;}
   </style>
 </head>
 <body>
-  <div class="app">
-    <div class="logo-central"><img src="limitecalc-logo.png" alt="LimiteCalc Logo"></div>
-
-    <header>
-      <div class="title">
-        <img src="carrinho-mini.png" alt="Carrinho">
-        <h1>LimiteCalc</h1>
+  <div class="logo-central"><img src="icon-512.png" alt="LimiteCalc Logo"></div>
+  <header>
+    <div class="title">
+      <img src="icon-192.png" alt="Carrinho">
+      <h1>LimiteCalc</h1>
+    </div>
+    <div class="total-geral">TOTAL GERAL: R$ <span id="totalValor">0,00</span></div>
+    <div class="limite-row">
+      <div class="limite-box">
+        <label>Meu Limite</label>
+        <input id="limiteInput" class="limite-input" maxlength="4" />
       </div>
-      <div class="total-geral" id="totalGeral">
-        TOTAL GERAL: R$ <span id="totalValor">0,00</span>
+      <div class="progress">
+        <div id="progressBar" class="progress-bar"></div>
+        <div id="progressText" class="progress-text">0%</div>
       </div>
-      <div class="limite-row">
-        <div class="limite-box">
-          <label for="limiteInput">Meu Limite</label>
-          <input id="limiteInput" class="limite-input" type="text" maxlength="4" placeholder="0" />
-        </div>
-        <div class="progress-wrap">
-          <div class="progress">
-            <div id="progressBar" class="progress-bar"></div>
-            <div id="progressText" class="progress-text">0%</div>
-          </div>
-        </div>
-      </div>
-    </header>
-
-    <div class="produto-row">
-      <div class="qtd-box"><input id="qtdInput" type="text" maxlength="4" value="1" /></div>
-      <div class="nome"><input id="nomeInput" type="text" placeholder="Nome do produto" /></div>
-      <div class="preco"><input id="precoInput" type="text" placeholder="0,00" /></div>
     </div>
+  </header>
 
-    <div class="add-row">
-      <button class="btn-add" id="btnAdicionar"><span>−</span>Adicionar Produto<span>+</span></button>
+  <div class="produto-row">
+    <div class="qtd-box"><input id="qtdInput" value="1" maxlength="4" /></div>
+    <div class="nome"><input id="nomeInput" placeholder="Nome do produto" /></div>
+    <div class="preco"><input id="precoInput" placeholder="0,00" /></div>
+  </div>
+  <div class="add-row"><button class="btn-add" id="btnAdicionar">Adicionar Produto</button></div>
+  <div class="ocr-row">
+    <button class="btn-ocr" id="btnOCR">Capturar Etiqueta</button>
+    <input id="ocrInput" type="file" accept="image/*" capture="environment" style="display:none" />
+  </div>
+  <div class="extra-buttons">
+    <button class="btn-pdf" id="btnPDF">Salvar em PDF</button>
+    <button class="btn-clear" id="btnClear">Limpar Imagens</button>
+  </div>
+  <footer id="lista"></footer>
+
+  <div class="modal" id="modal">
+    <div class="box">
+      <p>Deseja deletar este item?</p>
+      <button id="modalNo">Não</button>
+      <button id="modalYes">Sim</button>
     </div>
+  </div>
 
-    <div class="ocr-row">
-      <button class="btn-ocr" id="btnOCR">Capturar Etiqueta</button>
-      <input id="ocrInput" type="file" accept="image/*" capture="environment" style="display:none" />
-    </div>
-
-    <div class="keypad" id="keypad">
-      <div class="key">1</div><div class="key">2</div><div class="key">3</div>
-      <div class="key">4</div><div class="key">5</div><div class="key">6</div>
-      <div class="key">7</div><div class="key">8</div><div class="key">9</div>
-      <div class="key">0</div><div class="key">,</div><div class="key">⌫</div>
-    </div>
-
-    <footer id="lista"></footer>
-
-    <div class="extra
+<script>
+let produtos=[],limite=0,itemIndex=null;
+const totalValorEl=document.getElementById("totalValor");
+const progressBar=document.getElementById("progressBar");
+const progressText=document.getElementById("progressText");
+const listaEl=document.getElementById("lista");
+const modal=document.getElementById("modal");
+document.getElementById("limiteInput").addEventListener("input",e=>{
+  limite=parseFloat(e.target.value)||0;atualizar();
+});
+document.getElementById("btnAdicionar").addEventListener("click",()=>{
+  let nome=document.getElementById("nomeInput").value;
+  let preco=parseFloat(document.getElementById("precoInput").value.replace(",","."))||0;
+  let qtd=parseInt(document.getElementById("qtdInput").value)||1;
+  if(nome&&preco>0){produtos.push({nome,preco,qtd});document.getElementById("nomeInput").value="";document.getElementById("precoInput").value="0,00";document.getElementById("qtdInput").value="1";atualizar();}
+});
+function atualizar(){
+  listaEl.innerHTML="";let total=0;
+  produtos.forEach((p,i)=>{total+=p.preco*p.qtd;
+    let row=document.createElement("div");row.className="item";
+    row.innerHTML=`<div class="qtd-badge">x${p.qtd}</div><div class="item-nome">${p.nome}</div><div class="item-preco">R$ ${(p.preco*p.qtd).toFixed(2).replace(".",",")}</div>`;
+    row.querySelector(".item-nome").onclick=()=>{itemIndex=i;modal.style.display="flex";};
+    listaEl.appendChild(row);
+  });
+  totalValorEl.textContent=total.toFixed(2).replace(".",",");
