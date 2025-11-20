@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LimitCalc</title>
+  <meta name="description" content="Controle seu orçamento no supermercado com OCR de etiqueta e teclado brasileiro!">
   <style>
     body {font-family: Arial, sans-serif;background:#f4f4f4;margin:0;color:#333;}
     .container {max-width:500px;margin:0 auto;background:white;min-height:100vh;padding-bottom:20px;}
@@ -27,7 +28,7 @@
     #botoesFinais {display:none;justify-content:center;gap:30px;margin:30px;flex-wrap:wrap;}
     input#nomeProduto {width:100%;padding:18px;margin-top:25px;font-size:20px;border-radius:15px;border:2px solid #ddd;}
     #limitDiv {text-align:center;padding:20px;}
-    #limitDiv input {padding:15px;font-size:22px;width:180px;border-radius:12px;border:2px solid #ddd;}
+    #limitDiv input {padding:15px;font-size:22px;width:180px;border-radius:12px;border:2px solid #ddd;margin-right:10px;}
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.12/pdfmake.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.12/vfs_fonts.js"></script>
@@ -35,20 +36,20 @@
 </head>
 <body>
   <div class="container">
-    <header> LimitCalc</header>
+    <header>🛒 LimitCalc</header>
     <div id="limitDiv">
       <input type="number" id="limite" placeholder="Seu limite R$" step="0.01">
       <button class="btn btn-primary" onclick="definirLimite()">Definir Limite</button>
     </div>
     <div id="circle"><div id="progress">R$ 0,00</div></div>
     <div style="text-align:center">
-      <button class="btn btn-capture" onclick="iniciarCaptura()"> Capturar Etiqueta</button>
-      <button class="btn btn-primary" onclick="abrirTeclado()"> Adicionar Manual</button>
+      <button class="btn btn-capture" onclick="iniciarCaptura()">📸 Capturar Etiqueta</button>
+      <button class="btn btn-primary" onclick="abrirTeclado()">➕ Adicionar Manual</button>
     </div>
     <div id="listaItens" style="margin:20px;"></div>
     <div id="botoesFinais">
-      <button class="btn btn-primary" onclick="baixarPDF()"> Baixar PDF</button>
-      <button class="btn btn-whatsapp" onclick="compartilharWhats()"> WhatsApp</button>
+      <button class="btn btn-primary" onclick="baixarPDF()">📄 Baixar PDF</button>
+      <button class="btn btn-whatsapp" onclick="compartilharWhats()">📲 WhatsApp</button>
     </div>
   </div>
 
@@ -60,3 +61,196 @@
       <div class="teclado">
         <button onclick="digito(1)">1</button><button onclick="digito(2)">2</button><button onclick="digito(3)">3</button>
         <button onclick="digito(4)">4</button><button onclick="digito(5)">5</button><button onclick="digito(6)">6</button>
+        <button onclick="digito(7)">7</button><button onclick="digito(8)">8</button><button onclick="digito(9)">9</button>
+        <button onclick="apagar()" class="apagar">←</button><button onclick="digito(0)">0</button>
+        <button onclick="confirmar()" class="ok">✔ ADICIONAR</button>
+      </div>
+      <input type="text" id="nomeProduto" placeholder="Nome do produto (opcional)">
+    </div>
+  </div>
+
+  <script>
+    let limite = 0, total = 0, itens = [], valorCentavos = 0;
+
+    // Carregar dados salvos
+    if (localStorage.getItem('limitCalc')) {
+      const d = JSON.parse(localStorage.getItem('limitCalc'));
+      limite = d.limite || 0; total = d.total || 0; itens = d.itens || [];
+      atualizarTudo();
+    }
+
+    function definirLimite() {
+      limite = parseFloat(document.getElementById('limite').value) || 0;
+      salvar(); atualizarTudo();
+    }
+
+    function atualizarTudo() {
+      document.getElementById('progress').innerText = `R$ ${total.toFixed(2).replace('.',',')}`;
+      const perc = limite > 0 ? total / limite * 100 : 0;
+      let cor = '#4CAF50';
+      if (perc >= 90) cor = '#f44336';
+      else if (perc >= 70) cor = '#ff9800';
+      document.querySelector('#circle').style.borderColor = cor;
+      document.getElementById('botoesFinais').style.display = itens.length > 0 ? 'flex' : 'none';
+      renderLista();
+      salvar();
+    }
+
+    function renderLista() {
+      document.getElementById('listaItens').innerHTML = itens.map((i,idx) => 
+        `<div class="item"><span>${i.nome} - R$ ${i.preco.toFixed(2).replace('.',',')}</span><span class="delete" onclick="remover(${idx})">✖</span></div>`
+      ).join('');
+    }
+
+    function adicionar(nome = '', preco = 0) {
+      if (preco <= 0) return;
+      nome = nome || document.getElementById('nomeProduto').value.trim() || `Item R$ ${preco.toFixed(2)}`;
+      itens.push({nome, preco});
+      total += preco;
+      fecharTeclado();
+      atualizarTudo();
+    }
+
+    function remover(idx) {
+      total -= itens[idx].preco;
+      itens.splice(idx,1);
+      atualizarTudo();
+    }
+
+    function salvar() {
+      localStorage.setItem('limitCalc', JSON.stringify({limite, total, itens}));
+    }
+
+    // Teclado personalizado
+    function abrirTeclado(msg = '') {
+      valorCentavos = 0;
+      atualizarDisplay();
+      document.getElementById('nomeProduto').value = '';
+      if (msg) {
+        document.getElementById('msgErro').innerHTML = msg;
+        document.getElementById('msgErro').style.display = 'block';
+      } else {
+        document.getElementById('msgErro').style.display = 'none';
+      }
+      document.getElementById('tecladoModal').style.display = 'flex';
+      setTimeout(() => document.getElementById('nomeProduto').focus(), 300);
+    }
+
+    function fecharTeclado() {
+      document.getElementById('tecladoModal').style.display = 'none';
+    }
+
+    function digito(n) {
+      if (valorCentavos < 1000000) valorCentavos = valorCentavos * 10 + n;
+      atualizarDisplay();
+    }
+
+    function apagar() {
+      valorCentavos = Math.floor(valorCentavos / 10);
+      atualizarDisplay();
+    }
+
+    function atualizarDisplay() {
+      const reais = Math.floor(valorCentavos / 100).toLocaleString('pt-BR');
+      const centavos = (valorCentavos % 100).toString().padStart(2,'0');
+      document.getElementById('reais').innerText = reais;
+      document.getElementById('centavos').innerText = centavos;
+    }
+
+    function confirmar() {
+      const preco = valorCentavos / 100;
+      if (preco <= 0) return alert('Digite um valor!');
+      adicionar('', preco);
+    }
+
+    // Captura de etiqueta + OCR
+    function iniciarCaptura() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.capture = 'environment';
+      input.onchange = async e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const imgUrl = URL.createObjectURL(file);
+        try {
+          const result = await Tesseract.recognize(imgUrl, 'por');
+          const texto = result.data.text;
+          const preco = extrairPreco(texto);
+          const nome = extrairNome(texto);
+          URL.revokeObjectURL(imgUrl);
+          if (preco && confirm(`Encontrado:\n${nome}\nR$ ${preco.toFixed(2).replace('.',',')}\n\nAdicionar?`)) {
+            adicionar(nome, preco);
+          } else {
+            abrirTeclado('⚠️ Não foi possível identificar automaticamente<br>Digite manualmente abaixo:');
+          }
+        } catch (err) {
+          abrirTeclado('⚠️ Erro ao ler a imagem<br>Digite manualmente abaixo:');
+        }
+      };
+      input.click();
+    }
+
+    function extrairPreco(txt) {
+      const matches = txt.match(/(\d{1,5}[.,]\d{2})/g);
+      if (!matches) return null;
+      return matches.map(v => parseFloat(v.replace(',','.'))).sort((a,b)=>b-a)[0];
+    }
+
+    function extrairNome(txt) {
+      const linhas = txt.split('\n').map(l => l.trim()).filter(l => l.length > 3 && !/^\d+[.,]\d*$/.test(l));
+      return linhas[0] || 'Produto';
+    }
+
+    // PDF
+    function baixarPDF() {
+      const doc = {
+        pageSize: 'A6', pageMargins: [15,20,15,20],
+        content: [
+          {text: '🛒 LIMITCALC', style:'header'},
+          {text: new Date().toLocaleString('pt-BR'), style:'sub'},
+          {table: {widths: ['*','auto'], body: [
+            [{text:'Produto', bold:true}, {text:'Valor', bold:true}],
+            ...itens.map(i => [i.nome, `R$ ${i.preco.toFixed(2).replace('.',',')}`]),
+            [{text:'TOTAL', bold:true}, {text:`R$ ${total.toFixed(2).replace('.',',')}`, bold:true}]
+          ]}},
+          total > limite ? {text:`⚠️ Estourou R$ ${(total-limite).toFixed(2).replace('.',',')}`, style:'alerta'} : {text:'✅ Dentro do orçamento!', style:'ok'}
+        ],
+        styles: {header:{fontSize:24,bold:true,alignment:'center',color:'#00bd56'}, sub:{fontSize:12,alignment:'center'}, ok:{color:'green',alignment:'center',fontSize:16}, alerta:{color:'red',alignment:'center',fontSize:16}}
+      };
+      pdfMake.createPdf(doc).download(`LimitCalc_${new Date().toLocaleDateString('pt-BR')}.pdf`);
+    }
+
+    // WhatsApp
+    function compartilharWhats() {
+      const doc = {
+        pageSize: 'A6', pageMargins: [15,20,15,20],
+        content: [
+          {text: '🛒 LIMITCALC', style:'header'},
+          {text: new Date().toLocaleString('pt-BR'), style:'sub'},
+          {table: {widths: ['*','auto'], body: [
+            [{text:'Produto', bold:true}, {text:'Valor', bold:true}],
+            ...itens.map(i => [i.nome, `R$ ${i.preco.toFixed(2).replace('.',',')}`]),
+            [{text:'TOTAL', bold:true}, {text:`R$ ${total.toFixed(2).replace('.',',')}`, bold:true}]
+          ]}},
+          total > limite ? {text:`Estourou R$ ${(total-limite).toFixed(2).replace('.',',')}`, style:'alerta'} : {text:'Dentro do orçamento!', style:'ok'}
+        ],
+        styles: {header:{fontSize:24,bold:true,alignment:'center',color:'#00bd56'}, sub:{fontSize:12,alignment:'center'}, ok:{color:'green',alignment:'center'}, alerta:{color:'red',alignment:'center'}}
+      };
+      pdfMake.createPdf(doc).getBlob(blob => {
+        const file = new File([blob], "LimitCalc.pdf", {type:"application/pdf"});
+        if (navigator.share && navigator.canShare && navigator.canShare({files:[file]})) {
+          navigator.share({files:[file], title:'Minha compra no LimitCalc', text:'Olha minha compra de hoje! Baixe o app: https://netosousa09.github.io/LimiteCalc'});
+        } else {
+          alert('Compartilhamento não disponível. Use o botão Baixar PDF');
+        }
+      });
+    }
+
+    // Fechar modal clicando fora
+    document.getElementById('tecladoModal').addEventListener('click', e => {
+      if (e.target === document.getElementById('tecladoModal')) fecharTeclado();
+    });
+  </script>
+</body>
+</html>
