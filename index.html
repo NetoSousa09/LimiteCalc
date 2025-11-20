@@ -163,7 +163,7 @@
       adicionar('', preco);
     }
 
-    // Captura de etiqueta + OCR
+    // Captura de etiqueta + OCR OTIMIZADO PARA MEMÓRIA
     function iniciarCaptura() {
       const input = document.createElement('input');
       input.type = 'file';
@@ -172,21 +172,39 @@
       input.onchange = async e => {
         const file = e.target.files[0];
         if (!file) return;
-        const imgUrl = URL.createObjectURL(file);
-        try {
-          const result = await Tesseract.recognize(imgUrl, 'por');
-          const texto = result.data.text;
-          const preco = extrairPreco(texto);
-          const nome = extrairNome(texto);
-          URL.revokeObjectURL(imgUrl);
-          if (preco && confirm(`Encontrado:\n${nome}\nR$ ${preco.toFixed(2).replace('.',',')}\n\nAdicionar?`)) {
-            adicionar(nome, preco);
-          } else {
-            abrirTeclado('⚠️ Não foi possível identificar automaticamente<br>Digite manualmente abaixo:');
+        // REDUZ QUALIDADE PARA ECONOMIZAR MEMÓRIA
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+        img.onload = async () => {
+          // Redimensiona para max 800x600 para etiquetas (economiza 70% de memória)
+          canvas.width = Math.min(img.width, 800);
+          canvas.height = Math.min(img.height, 600);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          const imgUrl = canvas.toDataURL('image/jpeg', 0.7); // Qualidade 70%
+          try {
+            const worker = await Tesseract.createWorker('por');
+            await worker.setParameters({
+              tessedit_pageseg_mode: '13', // Modo para texto simples/raw (menos memória)
+              tessedit_char_whitelist: '0123456789.,R$ ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz áéíóúçãõâêîôû', // Só chars necessários
+              tessedit_ocr_engine_mode: '1' // Modo legado, mais leve
+            });
+            const result = await worker.recognize(imgUrl);
+            await worker.terminate(); // Libera memória imediatamente
+            const texto = result.data.text;
+            const preco = extrairPreco(texto);
+            const nome = extrairNome(texto);
+            if (preco && confirm(`Encontrado:\n${nome}\nR$ ${preco.toFixed(2).replace('.',',')}\n\nAdicionar?`)) {
+              adicionar(nome, preco);
+            } else {
+              abrirTeclado('⚠️ Não foi possível identificar automaticamente<br>Digite manualmente abaixo:');
+            }
+          } catch (err) {
+            console.log('Erro OCR:', err); // Log para debug
+            abrirTeclado('⚠️ Erro de processamento (memória baixa?).<br>Digite manualmente abaixo:');
           }
-        } catch (err) {
-          abrirTeclado('⚠️ Erro ao ler a imagem<br>Digite manualmente abaixo:');
-        }
+        };
+        img.src = URL.createObjectURL(file);
       };
       input.click();
     }
