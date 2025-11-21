@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>LimitCalc Gold</title>
+  <title>LimitCalc Final</title>
   
   <!-- Bibliotecas -->
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
@@ -16,15 +16,16 @@
         --btn-blue: #0984e3; 
         --bg: #f0f2f5; 
         --text-dark: #222f3e;
+        --yellow-title: #ffeaa7; /* Amarelo Ouro */
     }
     body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding-bottom: 50px; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
 
-    /* HEADER AJUSTADO */
+    /* HEADER */
     header { background: var(--header-green); color: white; padding: 20px; border-radius: 0 0 20px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
     
-    /* Título 2x Maior e Scanner Azul */
-    h1 { margin: 0; font-size: 40px; font-weight: 800; letter-spacing: -1px; line-height: 1; }
-    .subtitle { color: var(--btn-blue); font-weight: 800; background: white; padding: 2px 8px; border-radius: 8px; font-size: 20px; vertical-align: middle; margin-left: 5px; display: inline-block; }
+    /* Título Amarelo e Maior */
+    h1 { margin: 0; font-size: 40px; font-weight: 800; letter-spacing: -1px; line-height: 1; color: var(--yellow-title); text-shadow: 1px 1px 2px rgba(0,0,0,0.2); }
+    .subtitle { color: var(--btn-blue); font-weight: 800; background: white; padding: 2px 8px; border-radius: 8px; font-size: 20px; vertical-align: middle; margin-left: 5px; display: inline-block; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
 
     .btn-reset { background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 15px; border-radius: 20px; font-size: 12px; font-weight: bold; cursor: pointer; }
 
@@ -33,59 +34,49 @@
     /* CARDS */
     .card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-bottom: 15px; text-align: center; }
     
-    /* META INPUT */
+    /* META INPUT E LABEL AUMENTADA */
+    .meta-label { color: #999; font-size: 18px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; display: block; }
+    
     .meta-wrapper { display: flex; justify-content: center; align-items: center; gap: 5px; }
-    .meta-input { border: none; border-bottom: 2px solid #ddd; width: 100px; font-size: 24px; text-align: center; font-weight: bold; color: #333; outline: none; border-radius: 0; background: transparent; }
+    .meta-input { border: none; border-bottom: 2px solid #ddd; width: 120px; font-size: 24px; text-align: center; font-weight: bold; color: #333; outline: none; border-radius: 0; background: transparent; }
     .meta-input:focus { border-bottom-color: var(--header-green); }
 
     /* DISPLAYS */
     #totalDisplay { font-size: 48px; font-weight: 800; color: var(--header-green); transition: color 0.3s; }
     #restanteDisplay { font-size: 14px; font-weight: 600; color: #777; margin-top: 5px; }
 
-    /* BOTÕES AJUSTADOS */
+    /* BOTÕES */
     .btn { width: 100%; padding: 18px; border: none; border-radius: 12px; font-size: 18px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px; color: white; transition: 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
     .btn:active { transform: scale(0.96); }
     
-    /* Botão Scan agora é VERDE */
     .btn-scan { background: var(--header-green); }
-    /* Botão Lista é AZUL */
     .btn-list { background: var(--btn-blue); }
     .btn-manual { background: white; border: 2px solid var(--header-green); color: var(--header-green); }
 
-    /* LISTA NA TELA PRINCIPAL (NOVIDADE) */
+    /* LISTA PRINCIPAL */
     #mainListTitle { font-size: 14px; color: #777; margin: 20px 0 10px 0; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
     #mainListContainer { flex: 1; display: flex; flex-direction: column; gap: 10px; padding-bottom: 40px; }
     .mini-card { background: white; padding: 15px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 5px solid #ddd; box-shadow: 0 2px 5px rgba(0,0,0,0.03); animation: fadeIn 0.3s ease; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* --- CÂMERA OVERLAY --- */
+    /* CÂMERA OVERLAY */
     #cameraOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 5000; flex-direction: column; }
     #videoContainer { position: relative; flex: 1; overflow: hidden; display: flex; justify-content: center; align-items: center; }
     video { width: 100%; height: 100%; object-fit: cover; }
-    
-    /* MIRA FINA */
-    #scanGuide { 
-      position: absolute; 
-      width: 50%; height: 55px; 
-      border: 2px solid #00d2d3; border-radius: 8px; 
-      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7); 
-      z-index: 5001; transition: all 0.3s ease; 
-    }
+    #scanGuide { position: absolute; width: 50%; height: 55px; border: 2px solid #00d2d3; border-radius: 8px; box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7); z-index: 5001; transition: all 0.3s ease; }
     #scanGuide::after { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: rgba(255, 0, 0, 0.5); }
     #scanText { position: absolute; top: -40px; left: 0; width: 100%; text-align: center; color: white; font-weight: bold; font-size: 16px; text-shadow: 0 2px 4px rgba(0,0,0,0.8); background: rgba(0,0,0,0.5); padding: 5px 0; border-radius: 5px; }
     .camera-controls { padding: 30px; background: black; display: flex; justify-content: space-around; align-items: center; }
     .btn-circle { width: 70px; height: 70px; border-radius: 50%; background: white; border: 5px solid #ddd; cursor: pointer; }
 
     /* MODAIS */
-    #confirmModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 6000; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
-    .confirm-box { background: white; padding: 25px; border-radius: 20px; width: 100%; max-width: 350px; text-align: center; }
-    .result-val { font-size: 28px; font-weight: bold; color: #333; margin: 15px 0; word-break: break-word; }
-    .confirm-actions { display: flex; gap: 10px; margin-top: 20px; }
-
-    #qtdModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.95); z-index: 7000; justify-content: center; align-items: center; }
-    .qtd-box { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); text-align: center; width: 80%; max-width: 350px; }
-    .qtd-input { font-size: 32px; padding: 10px; width: 80px; text-align: center; border: 2px solid #ddd; border-radius: 10px; margin: 0 10px; }
-
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 6000; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
+    .modal-box { background: white; padding: 25px; border-radius: 20px; width: 100%; max-width: 350px; text-align: center; position: relative; }
+    
+    /* Inputs Especiais do Manual */
+    .input-big-currency { font-size: 32px; font-weight: bold; color: var(--header-green); width: 100%; border: none; border-bottom: 2px solid #ddd; text-align: center; outline: none; margin: 15px 0; }
+    .input-text-simple { font-size: 18px; width: 100%; border: 1px solid #ddd; padding: 10px; border-radius: 8px; margin-bottom: 15px; box-sizing: border-box; }
+    
     #loading { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: white; padding: 20px 40px; border-radius: 30px; font-weight: bold; z-index: 8000; }
 
     #listaModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f8f9fa; z-index: 2000; flex-direction: column; }
@@ -109,26 +100,26 @@
     </div>
   </div>
 
-  <!-- CONFIRMAÇÃO -->
-  <div id="confirmModal">
-    <div class="confirm-box">
-      <h3 id="confirmTitle">Confira o Valor</h3>
-      <div class="result-val" id="resultValue">R$ 0,00</div>
+  <!-- CONFIRMAÇÃO OCR -->
+  <div id="confirmModal" class="modal-overlay">
+    <div class="modal-box">
+      <h3>Confira o Valor</h3>
+      <div class="result-val" id="resultValue" style="font-size:28px;font-weight:bold;margin:15px 0;">R$ 0,00</div>
       <p style="color:#777; font-size:14px">Está correto?</p>
-      <div class="confirm-actions">
+      <div style="display:flex; gap:10px; margin-top:20px">
         <button class="btn" style="background:#ff7675; color:white; padding:12px" onclick="tentarNovamente()">Tentar de novo</button>
         <button class="btn" style="background:#00b894; color:white; padding:12px" onclick="confirmarLeitura()">Sim</button>
       </div>
     </div>
   </div>
 
-  <!-- QUANTIDADE -->
-  <div id="qtdModal">
-    <div class="qtd-box">
+  <!-- MODAL QUANTIDADE (OCR) -->
+  <div id="qtdModal" class="modal-overlay">
+    <div class="modal-box">
       <h3>Quantidade</h3>
       <div style="margin: 20px 0; display:flex; justify-content:center; align-items:center;">
         <button onclick="ajustarQtd(-1)" style="font-size:24px; width:50px; height:50px; border-radius:50%; border:none; background:#eee">-</button>
-        <input type="number" id="finalQtd" class="qtd-input" value="1">
+        <input type="number" id="finalQtd" style="font-size:32px;padding:10px;width:80px;text-align:center;border:2px solid #ddd;border-radius:10px;margin:0 10px" value="1">
         <button onclick="ajustarQtd(1)" style="font-size:24px; width:50px; height:50px; border-radius:50%; border:none; background:#eee">+</button>
       </div>
       <div id="resumoFinal" style="margin-bottom:20px; font-weight:bold; color:var(--header-green)"></div>
@@ -136,16 +127,33 @@
     </div>
   </div>
 
+  <!-- MODAL MANUAL (NOVO) -->
+  <div id="manualModal" class="modal-overlay">
+    <div class="modal-box">
+      <button onclick="fecharManual()" style="position:absolute; top:10px; right:10px; border:none; background:none; font-size:24px">×</button>
+      <h3>Digitar Manualmente</h3>
+      
+      <label style="display:block; text-align:left; font-size:12px; color:#777; font-weight:bold;">VALOR DO PRODUTO</label>
+      <!-- Input com máscara automática -->
+      <input type="tel" id="manualPrice" class="input-big-currency" placeholder="R$ 0,00" oninput="mascaraMoeda(this)">
+      
+      <label style="display:block; text-align:left; font-size:12px; color:#777; font-weight:bold;">NOME DO PRODUTO</label>
+      <input type="text" id="manualName" class="input-text-simple" placeholder="Ex: Arroz">
+
+      <button class="btn" style="background:var(--header-green); color:white; margin-top:10px" onclick="salvarManual()">Adicionar à Lista</button>
+    </div>
+  </div>
+
   <!-- APP UI -->
   <header>
-    <!-- Título Gigante + Scanner Azul -->
     <h1>LimitCalc<span class="subtitle">Scanner</span></h1>
     <button class="btn-reset" onclick="limparTudo()">🗑️ Limpar</button>
   </header>
 
   <div class="container">
     <div class="card">
-      <label style="color:#aaa; font-size:12px; font-weight:bold">META DE GASTOS</label>
+      <!-- LABEL AUMENTADA -->
+      <label class="meta-label">META DE GASTOS</label>
       <div class="meta-wrapper">
         <span style="font-size:24px; color:var(--header-green)">R$</span>
         <input type="number" class="meta-input" id="limiteInput" placeholder="0" onblur="salvarMeta()">
@@ -153,35 +161,27 @@
     </div>
 
     <div class="card">
-      <!-- Valor total que muda de cor -->
       <div id="totalDisplay">0,00</div>
       <div id="restanteDisplay">Disponível: R$ 0,00</div>
     </div>
 
-    <!-- Botão Verde -->
     <button class="btn btn-scan" onclick="iniciarCamera()">📷 Escanear Produto</button>
-    <button class="btn btn-manual" onclick="addManual()">⌨️ Digitar Manual</button>
+    <button class="btn btn-manual" onclick="abrirManual()">⌨️ Digitar Manual</button>
     <button class="btn btn-list" onclick="verLista()">📄 Ver Carrinho / Salvar</button>
 
-    <!-- LISTA NA TELA PRINCIPAL (Produtos surgem aqui) -->
     <div id="mainListTitle">Itens Adicionados:</div>
-    <div id="mainListContainer">
-        <!-- Os itens vão aparecer aqui automaticamente -->
-    </div>
+    <div id="mainListContainer"></div>
   </div>
 
-  <!-- MODAL LISTA COMPLETA -->
+  <!-- LISTA COMPLETA -->
   <div id="listaModal">
     <div style="background:white; padding:15px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 2px 5px rgba(0,0,0,0.05)">
       <h2 style="margin:0; font-size:18px">Carrinho Completo</h2>
       <button onclick="document.getElementById('listaModal').style.display='none'" style="border:none; background:none; font-size:24px">×</button>
     </div>
-    
-    <!-- APENAS BOTÃO PDF AGORA -->
     <div style="padding:15px; display:flex; gap:10px; flex-direction:column; background:#fff; border-bottom:1px solid #eee">
         <button class="btn" style="background:#e84393; margin:0; font-size:16px" onclick="compartilharNative('pdf')">📤 Salvar / Compartilhar PDF</button>
     </div>
-    
     <div id="listaContainer" style="flex:1; overflow-y:auto; padding-top:10px"></div>
   </div>
 
@@ -195,7 +195,7 @@
     let tempNome = "";
 
     window.onload = async () => {
-      if(localStorage.limitCalcGold) dados = JSON.parse(localStorage.limitCalcGold);
+      if(localStorage.limitCalcFinal) dados = JSON.parse(localStorage.limitCalcFinal);
       document.getElementById('limiteInput').value = dados.meta || '';
       atualizarUI();
 
@@ -206,9 +206,50 @@
       } catch(e) { console.error(e); }
     };
 
-    function salvar() { localStorage.limitCalcGold = JSON.stringify(dados); atualizarUI(); }
+    function salvar() { localStorage.limitCalcFinal = JSON.stringify(dados); atualizarUI(); }
     function salvarMeta() { dados.meta = parseFloat(document.getElementById('limiteInput').value)||0; salvar(); }
     function limparTudo() { if(confirm("Apagar tudo?")) { dados={meta:0,itens:[]}; document.getElementById('limiteInput').value=''; salvar(); }}
+
+    // --- LÓGICA DA MÁSCARA DE MOEDA (MANUAL) ---
+    function mascaraMoeda(input) {
+        let valor = input.value.replace(/\D/g, ""); // Remove tudo que não é dígito
+        if (valor === "") {
+            input.value = "";
+            return;
+        }
+        // Converte para float (divide por 100 para centavos)
+        let floatVal = parseFloat(valor) / 100;
+        
+        // Formata para BRL (R$ X.XXX,XX) mas sem o R$ para ficar no input
+        input.value = floatVal.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+    }
+
+    function abrirManual() {
+        document.getElementById('manualPrice').value = "";
+        document.getElementById('manualName').value = "";
+        document.getElementById('manualModal').style.display = 'flex';
+        document.getElementById('manualPrice').focus();
+    }
+
+    function fecharManual() {
+        document.getElementById('manualModal').style.display = 'none';
+    }
+
+    function salvarManual() {
+        const valStr = document.getElementById('manualPrice').value;
+        const nome = document.getElementById('manualName').value || "Item Manual";
+        
+        // Converte "1.234,56" para float JS 1234.56
+        const preco = parseFloat(valStr.replace(/\./g, '').replace(',', '.'));
+        
+        if (preco > 0) {
+            dados.itens.push({ nome: nome, preco: preco, qtd: 1 });
+            salvar();
+            fecharManual();
+        } else {
+            alert("Digite um valor válido.");
+        }
+    }
 
     // --- CÂMERA ---
     async function iniciarCamera() {
@@ -276,7 +317,7 @@
 
     function processarLeitura(texto) {
       const modal = document.getElementById('confirmModal');
-      const titulo = document.getElementById('confirmTitle');
+      const titulo = document.querySelector('#confirmModal h3');
       const valor = document.getElementById('resultValue');
 
       if(modoAtual === 'preco') {
@@ -324,13 +365,7 @@
       document.getElementById('qtdModal').style.display = 'none';
     }
 
-    function addManual() {
-      const nome = prompt("Nome:") || "Item Manual";
-      const preco = parseFloat((prompt("Preço:")||"").replace(',','.'));
-      if(preco) { tempNome = nome; tempPreco = preco; abrirQtdModal(); }
-    }
-
-    // --- LÓGICA VISUAL ATUALIZADA ---
+    // --- LÓGICA VISUAL ---
     function atualizarUI() {
       const total = dados.itens.reduce((acc, i) => acc + (i.preco * i.qtd), 0);
       const formatter = new Intl.NumberFormat('pt-BR', {minimumFractionDigits:2});
@@ -338,13 +373,11 @@
       const elTotal = document.getElementById('totalDisplay');
       elTotal.innerText = "R$ " + formatter.format(total);
       
-      // Lógica de Cores
       const pct = dados.meta > 0 ? (total / dados.meta) * 100 : 0;
-      if(pct < 50) elTotal.style.color = "#10ac84"; // Verde (0-49%)
-      else if(pct < 95) elTotal.style.color = "#feca57"; // Amarelo (50-94%)
-      else elTotal.style.color = "#ff7675"; // Vermelho (95%+)
+      if(pct < 50) elTotal.style.color = "#10ac84"; 
+      else if(pct < 95) elTotal.style.color = "#feca57"; 
+      else elTotal.style.color = "#ff7675"; 
 
-      // Meta Restante
       const rest = dados.meta - total;
       const elRest = document.getElementById('restanteDisplay');
       if(dados.meta > 0) {
@@ -354,19 +387,15 @@
         elRest.innerText = "Defina uma meta acima";
       }
 
-      // Renderizar Lista na Tela Principal (De baixo para cima na lógica de inclusão)
       renderizarListaPrincipal();
     }
 
     function renderizarListaPrincipal() {
         const container = document.getElementById('mainListContainer');
         if(dados.itens.length === 0) {
-            container.innerHTML = "<p style='text-align:center; color:#bbb; margin-top:10px'>Nenhum item adicionado ainda.</p>";
+            container.innerHTML = "<p style='text-align:center; color:#bbb; margin-top:10px'>Sua lista está vazia.</p>";
             return;
         }
-        // Mapeia e inverte a ordem visual se quiser que o último apareça no topo, 
-        // mas "de baixo pra cima" geralmente significa preencher o espaço.
-        // Vou renderizar padrão:
         container.innerHTML = dados.itens.map((item, i) => `
             <div class="mini-card">
                 <div>
@@ -381,7 +410,6 @@
         `).join('');
     }
 
-    // A lista do modal usa a mesma lógica de dados
     function verLista() {
       const div = document.getElementById('listaContainer');
       div.innerHTML = dados.itens.map((item, i) => `
@@ -396,7 +424,7 @@
       document.getElementById('listaModal').style.display = 'flex';
     }
 
-    function remover(i) { if(confirm("Remover?")) { dados.itens.splice(i,1); salvar(); verLista(); } }
+    function remover(i) { if(confirm("Remover?")) { dados.itens.splice(i,1); salvar(); atualizarUI(); verLista(); } }
 
     async function compartilharNative(tipo) {
         const total = dados.itens.reduce((acc, i) => acc + (i.preco * i.qtd), 0);
