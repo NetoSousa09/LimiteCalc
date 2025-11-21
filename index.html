@@ -3,264 +3,336 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LimitCalc Leve</title>
+  <title>LimitCalc Estável</title>
   
-  <!-- Tesseract (OCR) -->
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
-  <!-- jsPDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
   <style>
-    :root { --primary: #00bd56; --danger: #f44336; --dark: #333; }
-    body { font-family: sans-serif; background: #f8f9fa; margin: 0; padding-bottom: 80px; touch-action: manipulation; }
-    
-    header { background: var(--primary); color: white; text-align: center; padding: 15px; border-radius: 0 0 20px 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-    header h1 { margin: 0; font-size: 24px; }
-
+    body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding-bottom: 80px; -webkit-font-smoothing: antialiased; }
     .container { max-width: 600px; margin: 0 auto; padding: 15px; text-align: center; }
+    
+    /* Header */
+    header { background: #00bd56; color: white; padding: 20px; border-radius: 0 0 20px 20px; margin-bottom: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    h1 { margin: 0; font-size: 24px; }
 
-    /* Input Limite */
-    .limit-box { background: white; padding: 10px; border-radius: 15px; margin-top: -25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: inline-flex; gap: 10px; align-items: center; }
-    input[type="number"] { padding: 8px; border: 2px solid #eee; border-radius: 8px; font-size: 18px; width: 100px; text-align: center; }
+    /* Painel Principal */
+    .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 20px; }
+    
+    .input-group { display: flex; justify-content: center; align-items: center; gap: 10px; font-size: 18px; }
+    input[type="number"] { padding: 8px; font-size: 18px; width: 100px; border: 1px solid #ddd; border-radius: 8px; text-align: center; }
 
-    /* Círculo */
-    #circle { width: 220px; height: 220px; margin: 20px auto; border-radius: 50%; border: 15px solid #eee; display: flex; flex-direction: column; align-items: center; justify-content: center; background: white; }
-    #progress-text { font-size: 36px; font-weight: bold; color: var(--dark); }
+    /* Feedback Visual */
+    .status-circle { width: 150px; height: 150px; border-radius: 50%; border: 12px solid #eee; margin: 0 auto; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: bold; color: #333; transition: border-color 0.3s; }
 
-    /* Botões Grandes */
-    .btn { padding: 15px; font-size: 18px; border: none; border-radius: 12px; cursor: pointer; width: 100%; margin-bottom: 10px; color: white; font-weight: bold; }
-    .btn-cam { background: #007bff; }
-    .btn-add { background: white; border: 2px solid var(--primary); color: var(--primary); }
-    .btn-list { background: var(--dark); }
+    /* Botões */
+    .btn { width: 100%; padding: 16px; margin-bottom: 12px; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .btn-cam { background: #007bff; color: white; }
+    .btn-manual { background: white; border: 2px solid #00bd56; color: #00bd56; }
+    .btn-list { background: #333; color: white; }
 
-    /* Modal */
-    #modalLista { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; flex-direction: column; }
-    .modal-header { padding: 15px; background: #eee; display: flex; justify-content: space-between; align-items: center; }
-    .modal-body { flex: 1; overflow-y: auto; padding: 10px; }
-    .item-card { background: #fff; border-bottom: 1px solid #ddd; padding: 10px; display: flex; justify-content: space-between; align-items: center; }
+    /* Modal de Seleção de Preço */
+    #modalSelecao { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 3000; justify-content: center; align-items: center; }
+    .selecao-box { background: white; width: 90%; max-width: 350px; border-radius: 15px; padding: 20px; max-height: 80vh; overflow-y: auto; }
+    .btn-price { background: #eee; width: 100%; padding: 15px; margin-bottom: 10px; text-align: left; border-radius: 10px; font-size: 18px; border: 1px solid #ddd; }
+    .btn-price:active { background: #ddd; }
+
+    /* Modal Lista */
+    #modalLista { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2000; flex-direction: column; }
+    .lista-header { padding: 15px; background: #f8f9fa; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; }
+    .lista-body { flex: 1; overflow-y: auto; padding: 10px; }
+    .item-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #eee; align-items: center; }
     
     /* Loading */
-    #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; color: white; flex-direction: column; justify-content: center; align-items: center; }
+    #loading { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; }
+    .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #00bd56; border-radius: 50%; animation: spin 1s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
 
+  <div id="loading">
+    <div class="spinner"></div>
+    <p style="margin-top:15px; font-weight:bold; color:#555">Processando...</p>
+  </div>
+
   <header>
-    <h1>LimitCalc <span>Lite</span></h1>
+    <h1>LimitCalc <span>Pro</span></h1>
   </header>
 
   <div class="container">
-    <div class="limit-box">
-      <span>Meta: R$</span>
-      <input type="number" id="limiteInput" placeholder="0" onblur="definirLimite()">
+    <div class="card">
+      <div class="input-group">
+        <span>Meta R$</span>
+        <input type="number" id="limite" placeholder="0" onblur="salvarMeta()">
+      </div>
     </div>
 
-    <div id="circle">
-      <div id="progress-text">R$ 0,00</div>
-      <small>Gasto Total</small>
+    <div class="card">
+      <div class="status-circle" id="circulo">R$ 0,00</div>
+      <p style="color:#777; margin-top:10px">Total Gasto</p>
     </div>
 
-    <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none" onchange="processarImagem(this)">
+    <input type="file" id="camera" accept="image/*" capture="environment" style="display:none" onchange="capturarImagem(this)">
     
-    <button class="btn btn-cam" onclick="document.getElementById('cameraInput').click()">📷 Capturar Preço</button>
-    <button class="btn btn-add" onclick="adicionarManual()">⌨️ Digitar Manual</button>
-    <button class="btn btn-list" onclick="abrirLista()">📄 Ver Lista</button>
+    <button class="btn btn-cam" onclick="acionarCamera()">📷 Capturar Etiqueta</button>
+    <button class="btn btn-manual" onclick="addManual()">⌨️ Digitar Manual</button>
+    <button class="btn btn-list" onclick="verLista()">📄 Ver Lista de Compras</button>
   </div>
 
-  <!-- Modal Lista -->
+  <!-- Modal Seleção de Preço (Quando acha vários) -->
+  <div id="modalSelecao">
+    <div class="selecao-box">
+      <h3 style="margin-top:0">Qual é o preço?</h3>
+      <p style="font-size:14px; color:#666">Encontrei estes valores:</p>
+      <div id="listaOpcoes"></div>
+      <button class="btn" style="background:#f44336; color:white; margin-top:15px" onclick="fecharSelecao()">❌ Cancelar / Tentar de novo</button>
+    </div>
+  </div>
+
+  <!-- Modal Lista Completa -->
   <div id="modalLista">
-    <div class="modal-header">
+    <div class="lista-header">
       <h3>Minha Lista</h3>
-      <button onclick="fecharLista()" style="font-size:20px;border:none;background:none">✕</button>
+      <button onclick="fecharLista()" style="background:none; border:none; font-size:24px">✕</button>
     </div>
     <div style="padding:10px; display:flex; gap:10px">
-      <button class="btn" style="background:#25D366; margin:0" onclick="zap()">WhatsApp</button>
-      <button class="btn" style="background:#E91E63; margin:0" onclick="pdf()">PDF</button>
+      <button class="btn" style="background:#25D366; margin:0; color:white" onclick="zap()">WhatsApp</button>
+      <button class="btn" style="background:#E91E63; margin:0; color:white" onclick="pdf()">PDF</button>
     </div>
-    <div class="modal-body" id="listaBody"></div>
-  </div>
-
-  <!-- Loading -->
-  <div id="loadingOverlay">
-    <h2>Lendo...</h2>
-    <p>Aguarde um momento</p>
+    <div class="lista-body" id="itensContainer"></div>
   </div>
 
   <script>
-    // --- SETUP LEVE ---
-    let estado = { limite: 0, total: 0, itens: [] };
+    // --- ESTADO ---
+    let dados = { meta: 0, itens: [] };
     let worker = null;
 
+    // --- INICIALIZAÇÃO ---
     window.onload = async () => {
-      if(localStorage.limitCalcLite) estado = JSON.parse(localStorage.limitCalcLite);
-      document.getElementById('limiteInput').value = estado.limite || '';
-      atualizarInterface();
+      if(localStorage.limitCalcData) dados = JSON.parse(localStorage.limitCalcData);
+      document.getElementById('limite').value = dados.meta || '';
+      atualizarTela();
       
-      // Inicializa OCR silenciosamente
+      // Carrega OCR em background
       try {
         worker = await Tesseract.createWorker();
         await worker.loadLanguage('por');
         await worker.initialize('por');
-        await worker.setParameters({
-          tessedit_char_whitelist: '0123456789$,.% ' // Só permite números e símbolos de preço
-        });
-        console.log("OCR Carregado");
+        await worker.setParameters({ tessedit_char_whitelist: '0123456789$,.% ' });
+        console.log("IA Pronta");
       } catch(e) { console.error(e); }
     };
 
     function salvar() {
-      localStorage.limitCalcLite = JSON.stringify(estado);
-      atualizarInterface();
+      localStorage.limitCalcData = JSON.stringify(dados);
+      atualizarTela();
     }
 
-    function definirLimite() {
-      estado.limite = parseFloat(document.getElementById('limiteInput').value) || 0;
+    function salvarMeta() {
+      dados.meta = parseFloat(document.getElementById('limite').value) || 0;
       salvar();
     }
 
-    // --- LÓGICA OCR OTIMIZADA (SEM ESTOURAR MEMÓRIA) ---
-    async function processarImagem(input) {
-      const file = input.files[0];
-      if(!file) return;
+    // --- SISTEMA DE CÂMERA E MEMÓRIA ---
+    function acionarCamera() {
+      document.getElementById('camera').value = ''; // Reseta input para permitir mesma foto
+      document.getElementById('camera').click();
+    }
 
-      document.getElementById('loadingOverlay').style.display = 'flex';
-
+    async function capturarImagem(input) {
+      if(!input.files[0]) return;
+      
+      const loading = document.getElementById('loading');
+      loading.style.display = 'flex';
+      
       try {
-        // 1. Redimensionar imagem para max 600px (Isso salva a memória RAM)
-        const imagemPequena = await redimensionarImagem(file);
+        if(!worker) throw new Error("IA ainda carregando");
 
-        // 2. Ler direto (sem processamento pesado de pixels)
-        if(!worker) { alert("IA ainda carregando..."); return; }
+        // 1. Reduzir imagem DRASTICAMENTE (Max 600px)
+        // Isso evita o erro de "Insuficiência de Memória"
+        const canvas = await redimensionar(input.files[0]);
         
-        const { data: { text } } = await worker.recognize(imagemPequena);
+        // 2. Ler texto
+        const { data: { text } } = await worker.recognize(canvas);
         
-        interpretarTexto(text);
+        // 3. Limpeza de Memória Imediata
+        canvas.width = 0; 
+        canvas.height = 0; // Mata o canvas da memória
 
-      } catch (err) {
-        alert("Erro de memória ou leitura. Tente uma foto mais de perto.");
+        analisarTexto(text);
+
+      } catch(err) {
+        alert("Erro ao ler. Tente afastar um pouco a câmera.");
         console.error(err);
       } finally {
-        document.getElementById('loadingOverlay').style.display = 'none';
-        input.value = ''; // Limpa input
+        loading.style.display = 'none';
       }
     }
 
-    function redimensionarImagem(file) {
+    function redimensionar(file) {
       return new Promise((resolve) => {
         const img = new Image();
         img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
-          
-          // Força largura máxima de 600px (O segredo para não travar)
-          const MAX_WIDTH = 600;
-          const scale = Math.min(MAX_WIDTH / img.width, 1);
-          
-          canvas.width = img.width * scale;
-          canvas.height = img.height * scale;
-          
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          
-          // Retorna o canvas direto (mais leve que toDataURL)
-          resolve(canvas);
+          const cvs = document.createElement('canvas');
+          const ctx = cvs.getContext('2d');
+          const max = 600; // Limite seguro para memória
+          const scale = Math.min(max / img.width, 1);
+          cvs.width = img.width * scale;
+          cvs.height = img.height * scale;
+          ctx.drawImage(img, 0, 0, cvs.width, cvs.height);
+          resolve(cvs);
         };
         img.src = URL.createObjectURL(file);
       });
     }
 
-    function interpretarTexto(text) {
-      // Procura preços no texto bagunçado
+    function analisarTexto(texto) {
+      // Regex para capturar preços (ignora anos como 2024 se possível)
       const regex = /(?:R\$)?\s*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})/g;
       let match;
       let precos = [];
 
-      while ((match = regex.exec(text)) !== null) {
-        // Corrige vírgula/ponto
-        let valStr = match[1];
-        if(valStr.includes(',') && !valStr.includes('.')) valStr = valStr.replace(',','.');
-        else if(valStr.includes('.') && valStr.includes(',')) valStr = valStr.replace('.','').replace(',','.');
+      while ((match = regex.exec(texto)) !== null) {
+        let valStr = match[1]
+          .replace('.', '') // Tira ponto de milhar
+          .replace(',', '.'); // Troca vírgula por ponto decimal
         
+        // Correção para caso de 10.90 (formato americano)
+        if(match[1].includes('.') && !match[1].includes(',')) {
+           valStr = match[1]; 
+        }
+
         const val = parseFloat(valStr);
-        if(val > 0 && val < 10000) precos.push(val);
+        
+        // Filtros lógicos:
+        // - Menor que 10.000 (ninguém compra carro no mercado)
+        // - Maior que 0.10
+        // - Evitar ano atual (ex: 2024, 2025) se aparecer solto
+        if(!isNaN(val) && val > 0.10 && val < 10000) {
+           if(val !== 2024 && val !== 2025) precos.push(val);
+        }
       }
 
-      if(precos.length > 0) {
-        const maiorPreco = Math.max(...precos); // Pega o maior (geralmente o correto)
-        if(confirm(`Preço identificado: R$ ${maiorPreco.toFixed(2)}\nAdicionar à lista?`)) {
-          adicionarItem("Produto " + (estado.itens.length + 1), maiorPreco);
-        }
+      // Remove duplicatas e ordena do maior para o menor
+      precos = [...new Set(precos)].sort((a,b) => b - a);
+
+      if(precos.length === 0) {
+        alert("Nenhum preço identificado. Tente manual.");
+      } else if (precos.length === 1) {
+        // Só achou um? Adiciona direto
+        confirmarAdicao(precos[0]);
       } else {
-        alert("Não consegui ler o preço. Tente digitar.");
+        // Achou vários? Mostra menu para usuário escolher
+        abrirSelecao(precos);
       }
     }
 
-    // --- CRUD BÁSICO ---
-    function adicionarItem(nome, preco) {
-      estado.itens.push({ nome, preco });
-      estado.total += preco;
+    // --- MENU DE SELEÇÃO (SOLUÇÃO PARA VALORES ERRADOS) ---
+    function abrirSelecao(listaPrecos) {
+      const div = document.getElementById('listaOpcoes');
+      div.innerHTML = '';
+      
+      listaPrecos.forEach(preco => {
+        const btn = document.createElement('button');
+        btn.className = 'btn-price';
+        btn.innerHTML = `<b>R$ ${preco.toFixed(2).replace('.',',')}</b>`;
+        btn.onclick = () => {
+          confirmarAdicao(preco);
+          fecharSelecao();
+        };
+        div.appendChild(btn);
+      });
+
+      document.getElementById('modalSelecao').style.display = 'flex';
+    }
+
+    function fecharSelecao() {
+      document.getElementById('modalSelecao').style.display = 'none';
+    }
+
+    function confirmarAdicao(valor) {
+      const nome = prompt(`Valor: R$ ${valor.toFixed(2)}\nNome do produto (opcional):`) || "Item";
+      dados.itens.push({ nome, preco: valor });
       salvar();
     }
 
-    function adicionarManual() {
-      const nome = prompt("Nome:") || "Item";
-      const preco = parseFloat((prompt("Valor:")||"").replace(',','.'));
-      if(preco) adicionarItem(nome, preco);
+    // --- LÓGICA MANUAL E VISUALIZAÇÃO ---
+    function addManual() {
+      const nome = prompt("Nome do produto:");
+      if(nome === null) return;
+      const valStr = prompt("Valor (ex: 12,99):");
+      if(!valStr) return;
+      const val = parseFloat(valStr.replace(',','.'));
+      if(val) {
+        dados.itens.push({ nome: nome || "Item", preco: val });
+        salvar();
+      }
     }
+
+    function atualizarTela() {
+      const total = dados.itens.reduce((acc, i) => acc + i.preco, 0);
+      document.getElementById('circulo').innerText = `R$ ${total.toFixed(2).replace('.',',')}`;
+      
+      const circulo = document.getElementById('circulo');
+      if(dados.meta > 0) {
+        const pct = (total / dados.meta) * 100;
+        if(pct > 100) circulo.style.borderColor = '#000';
+        else if(pct > 90) circulo.style.borderColor = '#f44336';
+        else if(pct > 50) circulo.style.borderColor = '#ff9800';
+        else circulo.style.borderColor = '#4CAF50';
+      } else {
+        circulo.style.borderColor = '#eee';
+      }
+    }
+
+    // --- LISTAGEM E EXPORTAÇÃO ---
+    function verLista() {
+      const div = document.getElementById('itensContainer');
+      div.innerHTML = dados.itens.map((item, i) => `
+        <div class="item-row">
+          <div>
+            <b>${item.nome}</b><br>
+            <span style="color:#666">R$ ${item.preco.toFixed(2).replace('.',',')}</span>
+          </div>
+          <button onclick="remover(${i})" style="color:red;border:none;background:none;font-size:24px">×</button>
+        </div>
+      `).join('');
+      document.getElementById('modalLista').style.display = 'flex';
+    }
+
+    function fecharLista() { document.getElementById('modalLista').style.display = 'none'; }
 
     function remover(i) {
       if(confirm("Excluir item?")) {
-        estado.total -= estado.itens[i].preco;
-        estado.itens.splice(i,1);
+        dados.itens.splice(i, 1);
         salvar();
-        renderLista();
+        verLista();
       }
     }
 
-    function atualizarInterface() {
-      document.getElementById('progress-text').innerText = `R$ ${estado.total.toFixed(2).replace('.',',')}`;
-      const circ = document.getElementById('circle');
-      if(estado.limite > 0) {
-        const perc = (estado.total / estado.limite) * 100;
-        circ.style.borderColor = perc > 90 ? '#f44336' : (perc > 50 ? '#FF9800' : '#4CAF50');
-      }
-    }
-
-    // --- MODAL ---
-    function abrirLista() { renderLista(); document.getElementById('modalLista').style.display = 'flex'; }
-    function fecharLista() { document.getElementById('modalLista').style.display = 'none'; }
-    
-    function renderLista() {
-      const div = document.getElementById('listaBody');
-      div.innerHTML = estado.itens.map((item, i) => `
-        <div class="item-card">
-          <span>${item.nome}</span>
-          <div style="display:flex;align-items:center;gap:10px">
-            <b>R$ ${item.preco.toFixed(2).replace('.',',')}</b>
-            <button onclick="remover(${i})" style="color:red;border:none;background:none;font-size:20px">🗑️</button>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    // --- EXPORTAR ---
     function zap() {
-      let msg = "*Minha Lista:*\n";
-      estado.itens.forEach(i => msg += `- ${i.nome}: R$ ${i.preco.toFixed(2)}\n`);
-      msg += `\n*Total: R$ ${estado.total.toFixed(2)}*`;
-      window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`);
+      const total = dados.itens.reduce((acc, i) => acc + i.preco, 0);
+      let txt = "*Minha Lista de Compras*\n\n";
+      dados.itens.forEach(i => txt += `▪ ${i.nome}: R$ ${i.preco.toFixed(2).replace('.',',')}\n`);
+      txt += `\n*TOTAL: R$ ${total.toFixed(2).replace('.',',')}*`;
+      window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`);
     }
 
     function pdf() {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
-      doc.text("Lista de Compras", 20, 20);
+      const total = dados.itens.reduce((acc, i) => acc + i.preco, 0);
+      
+      doc.text("Lista de Compras - LimitCalc", 20, 20);
       doc.autoTable({
-        head: [['Item', 'Valor']],
-        body: estado.itens.map(i => [i.nome, `R$ ${i.preco.toFixed(2)}`])
+        startY: 30,
+        head: [['Produto', 'Valor']],
+        body: dados.itens.map(i => [i.nome, `R$ ${i.preco.toFixed(2).replace('.',',')}`])
       });
-      doc.text(`Total: R$ ${estado.total.toFixed(2)}`, 20, doc.lastAutoTable.finalY + 10);
-      doc.save('lista.pdf');
+      doc.text(`Total Final: R$ ${total.toFixed(2).replace('.',',')}`, 20, doc.lastAutoTable.finalY + 15);
+      doc.save('lista_compras.pdf');
     }
   </script>
 </body>
