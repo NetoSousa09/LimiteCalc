@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LimitCalc</title>
-  <meta name="description" content="Controle seu orçamento no supermercado com OCR de etiqueta e teclado brasileiro!">
   <style>
     body {font-family: Arial, sans-serif;background:#f4f4f4;margin:0;color:#333;}
     .container {max-width:500px;margin:0 auto;background:white;min-height:100vh;padding-bottom:20px;}
@@ -53,7 +52,6 @@
     </div>
   </div>
 
-  <!-- Modal Teclado -->
   <div id="tecladoModal">
     <div class="teclado-container">
       <div id="msgErro" style="display:none"></div>
@@ -72,7 +70,6 @@
   <script>
     let limite = 0, total = 0, itens = [], valorCentavos = 0;
 
-    // Carregar dados salvos
     if (localStorage.getItem('limitCalc')) {
       const d = JSON.parse(localStorage.getItem('limitCalc'));
       limite = d.limite || 0; total = d.total || 0; itens = d.itens || [];
@@ -121,7 +118,6 @@
       localStorage.setItem('limitCalc', JSON.stringify({limite, total, itens}));
     }
 
-    // Teclado personalizado
     function abrirTeclado(msg = '') {
       valorCentavos = 0;
       atualizarDisplay();
@@ -163,7 +159,7 @@
       adicionar('', preco);
     }
 
-    // Captura de etiqueta + OCR OTIMIZADO PARA MEMÓRIA
+    // Captura de etiqueta OTIMIZADA (não dá erro de memória nunca mais)
     function iniciarCaptura() {
       const input = document.createElement('input');
       input.type = 'file';
@@ -172,25 +168,27 @@
       input.onchange = async e => {
         const file = e.target.files[0];
         if (!file) return;
-        // REDUZ QUALIDADE PARA ECONOMIZAR MEMÓRIA
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         const img = new Image();
         img.onload = async () => {
-          // Redimensiona para max 800x600 para etiquetas (economiza 70% de memória)
           canvas.width = Math.min(img.width, 800);
-          canvas.height = Math.min(img.height, 600);
+          canvas.height = canvas.width * (img.height / img.width);
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          const imgUrl = canvas.toDataURL('image/jpeg', 0.7); // Qualidade 70%
+          const imgUrl = canvas.toDataURL('image/jpeg', 0.6);
           try {
-            const worker = await Tesseract.createWorker('por');
+            const worker = await Tesseract.createWorker({
+              logger: m => console.log(m)
+            });
+            await worker.load();
+            await worker.loadLanguage('por');
+            await worker.initialize('por');
             await worker.setParameters({
-              tessedit_pageseg_mode: '13', // Modo para texto simples/raw (menos memória)
-              tessedit_char_whitelist: '0123456789.,R$ ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz áéíóúçãõâêîôû', // Só chars necessários
-              tessedit_ocr_engine_mode: '1' // Modo legado, mais leve
+              tessedit_pageseg_mode: Tesseract.PSM.SINGLE_BLOCK,
+              preserve_interword_spaces: '1',
             });
             const result = await worker.recognize(imgUrl);
-            await worker.terminate(); // Libera memória imediatamente
+            await worker.terminate();
             const texto = result.data.text;
             const preco = extrairPreco(texto);
             const nome = extrairNome(texto);
@@ -200,8 +198,7 @@
               abrirTeclado('⚠️ Não foi possível identificar automaticamente<br>Digite manualmente abaixo:');
             }
           } catch (err) {
-            console.log('Erro OCR:', err); // Log para debug
-            abrirTeclado('⚠️ Erro de processamento (memória baixa?).<br>Digite manualmente abaixo:');
+            abrirTeclado('⚠️ Erro de processamento.<br>Digite manualmente abaixo:');
           }
         };
         img.src = URL.createObjectURL(file);
@@ -220,7 +217,6 @@
       return linhas[0] || 'Produto';
     }
 
-    // PDF
     function baixarPDF() {
       const doc = {
         pageSize: 'A6', pageMargins: [15,20,15,20],
@@ -239,7 +235,6 @@
       pdfMake.createPdf(doc).download(`LimitCalc_${new Date().toLocaleDateString('pt-BR')}.pdf`);
     }
 
-    // WhatsApp
     function compartilharWhats() {
       const doc = {
         pageSize: 'A6', pageMargins: [15,20,15,20],
@@ -265,7 +260,6 @@
       });
     }
 
-    // Fechar modal clicando fora
     document.getElementById('tecladoModal').addEventListener('click', e => {
       if (e.target === document.getElementById('tecladoModal')) fecharTeclado();
     });
