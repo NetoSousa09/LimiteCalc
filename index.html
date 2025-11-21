@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>LimitCalc Scanner</title>
+  <title>LimitCalc Final</title>
   
   <!-- Bibliotecas -->
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
@@ -40,22 +40,34 @@
     .btn-list { background: #0984e3; }
     .btn-manual { background: white; border: 2px solid #10ac84; color: #10ac84; }
 
-    /* --- CÂMERA OVERLAY (A Mágica) --- */
+    /* --- CÂMERA OVERLAY --- */
     #cameraOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 5000; flex-direction: column; }
     
     #videoContainer { position: relative; flex: 1; overflow: hidden; display: flex; justify-content: center; align-items: center; }
     video { width: 100%; height: 100%; object-fit: cover; }
     
-    /* O Retângulo de Mira */
+    /* RETÂNGULO DE MIRA (AJUSTADO PARA SER FINO E PEQUENO) */
     #scanGuide { 
       position: absolute; 
-      width: 80%; 
-      height: 150px; 
-      border: 3px solid #00d2d3; 
-      border-radius: 10px; 
-      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7); /* Escurece o resto da tela */
+      /* Dimensões iniciais (serão alteradas via JS) */
+      width: 50%; 
+      height: 60px; 
+      border: 2px solid #00d2d3; 
+      border-radius: 8px; 
+      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7); /* Escurece o fundo */
       z-index: 5001;
+      transition: all 0.3s ease; /* Animação suave ao mudar de tamanho */
     }
+    
+    /* Linha vermelha central para ajudar a mirar no meio dos números */
+    #scanGuide::after {
+      content: '';
+      position: absolute;
+      top: 50%; left: 0; right: 0;
+      height: 1px;
+      background: rgba(255, 0, 0, 0.5);
+    }
+
     #scanText {
       position: absolute;
       top: -40px;
@@ -64,69 +76,67 @@
       text-align: center;
       color: white;
       font-weight: bold;
-      font-size: 18px;
+      font-size: 16px;
       text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+      background: rgba(0,0,0,0.5);
+      padding: 5px 0;
+      border-radius: 5px;
     }
 
-    /* Controles da Câmera */
     .camera-controls { padding: 30px; background: black; display: flex; justify-content: space-around; align-items: center; }
     .btn-circle { width: 70px; height: 70px; border-radius: 50%; background: white; border: 5px solid #ddd; cursor: pointer; }
     .btn-circle:active { border-color: #10ac84; background: #eee; }
 
-    /* MODAL DE CONFIRMAÇÃO (Onde o user valida) */
+    /* MODAIS */
     #confirmModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 6000; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
     .confirm-box { background: white; padding: 25px; border-radius: 20px; width: 100%; max-width: 350px; text-align: center; }
     .result-val { font-size: 28px; font-weight: bold; color: #333; margin: 15px 0; word-break: break-word; }
     .confirm-actions { display: flex; gap: 10px; margin-top: 20px; }
 
-    /* MODAL QUANTIDADE FINAL */
     #qtdModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.95); z-index: 7000; justify-content: center; align-items: center; }
     .qtd-box { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); text-align: center; width: 80%; max-width: 350px; }
     .qtd-input { font-size: 32px; padding: 10px; width: 80px; text-align: center; border: 2px solid #ddd; border-radius: 10px; margin: 0 10px; }
 
-    /* LOADING */
     #loading { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: white; padding: 20px 40px; border-radius: 30px; font-weight: bold; z-index: 8000; }
 
-    /* LISTA */
     #listaModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f8f9fa; z-index: 2000; flex-direction: column; }
     .item-row { background: white; padding: 15px; margin: 10px 15px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 5px solid #10ac84; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
   </style>
 </head>
 <body>
 
-  <!-- LOADING -->
   <div id="loading">Lendo...</div>
 
-  <!-- CAMERA OVERLAY -->
+  <!-- CÂMERA -->
   <div id="cameraOverlay">
     <div id="videoContainer">
       <video id="videoFeed" autoplay playsinline muted></video>
-      <!-- Guia de Mira -->
+      <!-- MIRA -->
       <div id="scanGuide">
         <div id="scanText">Aponte para o PREÇO</div>
       </div>
     </div>
     <div class="camera-controls">
-      <button onclick="fecharCamera()" style="background:none; border:none; color:white; font-size:18px;">Cancelar</button>
+      <button onclick="fecharCamera()" style="background:none; border:none; color:white; font-size:16px;">Cancelar</button>
       <button class="btn-circle" onclick="capturarFoto()"></button>
-      <div style="width: 60px;"></div> <!-- Espaçador -->
+      <div style="width: 60px;"></div>
     </div>
   </div>
 
-  <!-- MODAL DE CONFIRMAÇÃO (Intermediário) -->
+  <!-- CONFIRMAÇÃO -->
   <div id="confirmModal">
     <div class="confirm-box">
       <h3 id="confirmTitle">Confira o Valor</h3>
-      <div class="result-val" id="resultValue">R$ 10,90</div>
+      <div class="result-val" id="resultValue">R$ 0,00</div>
       <p style="color:#777; font-size:14px">Está correto?</p>
       <div class="confirm-actions">
-        <button class="btn" style="background:#ff7675; color:white" onclick="tentarNovamente()">Não (Tentar de novo)</button>
-        <button class="btn" style="background:#00b894; color:white" onclick="confirmarLeitura()">Sim (Continuar)</button>
+        <button class="btn" style="background:#ff7675; color:white; padding:12px" onclick="tentarNovamente()">Tentar de novo</button>
+        <button class="btn" style="background:#00b894; color:white; padding:12px" onclick="confirmarLeitura()">Sim</button>
       </div>
     </div>
   </div>
 
-  <!-- MODAL FINAL (Quantidade) -->
+  <!-- QUANTIDADE -->
   <div id="qtdModal">
     <div class="qtd-box">
       <h3>Quantidade</h3>
@@ -136,11 +146,11 @@
         <button onclick="ajustarQtd(1)" style="font-size:24px; width:50px; height:50px; border-radius:50%; border:none; background:#eee">+</button>
       </div>
       <div id="resumoFinal" style="margin-bottom:20px; font-weight:bold; color:#10ac84"></div>
-      <button class="btn" style="background:#222f3e; color:white" onclick="salvarItem()">Adicionar ao Carrinho</button>
+      <button class="btn" style="background:#222f3e; color:white" onclick="salvarItem()">Adicionar</button>
     </div>
   </div>
 
-  <!-- APP PRINCIPAL -->
+  <!-- APP -->
   <header>
     <h1>LimitCalc Scanner</h1>
     <button class="btn-reset" onclick="limparTudo()">🗑️ Limpar</button>
@@ -162,20 +172,24 @@
 
     <button class="btn btn-scan" onclick="iniciarCamera()">📷 Escanear Produto</button>
     <button class="btn btn-manual" onclick="addManual()">⌨️ Digitar Manual</button>
-    <button class="btn btn-list" onclick="verLista()">📄 Ver Carrinho</button>
+    <button class="btn btn-list" onclick="verLista()">📄 Ver Carrinho / Salvar</button>
   </div>
 
-  <!-- LISTA MODAL -->
+  <!-- LISTA -->
   <div id="listaModal">
     <div style="background:white; padding:15px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 2px 5px rgba(0,0,0,0.05)">
       <h2 style="margin:0; font-size:18px">Carrinho</h2>
       <button onclick="document.getElementById('listaModal').style.display='none'" style="border:none; background:none; font-size:24px">×</button>
     </div>
-    <div style="padding:10px; display:flex; gap:10px;">
-      <button class="btn" style="background:#25D366; margin:0; font-size:14px" onclick="zap()">WhatsApp</button>
-      <button class="btn" style="background:#e84393; margin:0; font-size:14px" onclick="pdf()">PDF</button>
+    <!-- BOTÕES DE SALVAR ATUALIZADOS -->
+    <div style="padding:15px; display:flex; gap:10px; flex-direction:column; background:#fff; border-bottom:1px solid #eee">
+        <p style="margin:0; font-size:12px; color:#777">Opções de Compartilhamento:</p>
+        <div style="display:flex; gap:10px">
+            <button class="btn" style="background:#25D366; margin:0; font-size:14px; flex:1" onclick="compartilharNative('whatsapp')">WhatsApp</button>
+            <button class="btn" style="background:#e84393; margin:0; font-size:14px; flex:1" onclick="compartilharNative('pdf')">Salvar PDF</button>
+        </div>
     </div>
-    <div id="listaContainer" style="flex:1; overflow-y:auto"></div>
+    <div id="listaContainer" style="flex:1; overflow-y:auto; padding-top:10px"></div>
   </div>
 
   <script>
@@ -183,19 +197,17 @@
     let dados = { meta: 0, itens: [] };
     let worker = null;
     
-    // Variáveis de fluxo
+    // Fluxo
     let stream = null;
-    let modoAtual = 'preco'; // 'preco' ou 'nome'
+    let modoAtual = 'preco'; 
     let tempPreco = 0;
     let tempNome = "";
 
-    // --- INICIALIZAÇÃO ---
     window.onload = async () => {
-      if(localStorage.limitCalcScan) dados = JSON.parse(localStorage.limitCalcScan);
+      if(localStorage.limitCalcFinal) dados = JSON.parse(localStorage.limitCalcFinal);
       document.getElementById('limiteInput').value = dados.meta || '';
       atualizarUI();
 
-      // Pré-carrega OCR
       try {
         worker = await Tesseract.createWorker();
         await worker.loadLanguage('por');
@@ -204,13 +216,12 @@
       } catch(e) { console.error(e); }
     };
 
-    function salvar() { localStorage.limitCalcScan = JSON.stringify(dados); atualizarUI(); }
+    function salvar() { localStorage.limitCalcFinal = JSON.stringify(dados); atualizarUI(); }
     function salvarMeta() { dados.meta = parseFloat(document.getElementById('limiteInput').value)||0; salvar(); }
     function limparTudo() { if(confirm("Apagar tudo?")) { dados={meta:0,itens:[]}; document.getElementById('limiteInput').value=''; salvar(); }}
 
-    // --- CÂMERA AO VIVO ---
+    // --- CÂMERA ---
     async function iniciarCamera() {
-      // Reseta fluxo
       modoAtual = 'preco';
       tempPreco = 0;
       tempNome = "";
@@ -219,22 +230,18 @@
       try {
         const video = document.getElementById('videoFeed');
         stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { facingMode: "environment" } // Tenta câmera traseira
+          video: { facingMode: "environment" } 
         });
         video.srcObject = stream;
         document.getElementById('cameraOverlay').style.display = 'flex';
       } catch(err) {
-        alert("Erro ao abrir câmera. Verifique as permissões.");
-        console.error(err);
+        alert("Erro ao abrir câmera.");
       }
     }
 
     function fecharCamera() {
       const video = document.getElementById('videoFeed');
-      if(stream) {
-        stream.getTracks().forEach(t => t.stop());
-        stream = null;
-      }
+      if(stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
       video.srcObject = null;
       document.getElementById('cameraOverlay').style.display = 'none';
     }
@@ -244,45 +251,40 @@
       const texto = document.getElementById('scanText');
       
       if(modo === 'preco') {
-        texto.innerText = "Enquadre o PREÇO";
-        guia.style.height = "100px"; // Retângulo mais fino para preço
+        texto.innerText = "Mire Apenas no NÚMERO";
+        // AJUSTE SOLICITADO: RETÂNGULO BEM MENOR
+        guia.style.width = "50%"; 
+        guia.style.height = "55px"; 
         guia.style.borderColor = "#00d2d3";
       } else {
-        texto.innerText = "Enquadre o NOME";
-        guia.style.height = "150px"; // Retângulo maior para nome
+        texto.innerText = "Mire Apenas no NOME";
+        guia.style.width = "70%";
+        guia.style.height = "70px"; 
         guia.style.borderColor = "#feca57";
       }
     }
 
-    // --- CAPTURA E OCR ---
     async function capturarFoto() {
       const video = document.getElementById('videoFeed');
       const guia = document.getElementById('scanGuide');
       const loading = document.getElementById('loading');
 
       if(!worker) return alert("IA carregando...");
-
       loading.style.display = 'block';
 
-      // 1. Cria canvas temporário
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
 
-      // Tamanho do vídeo real vs tamanho na tela
+      // Lógica de Recorte (Crop) baseada no tamanho visual da mira
       const videoW = video.videoWidth;
       const videoH = video.videoHeight;
       const screenW = video.offsetWidth;
       const screenH = video.offsetHeight;
-      
-      // Proporção
       const scaleX = videoW / screenW;
       const scaleY = videoH / screenH;
-
-      // Posição do Guia na tela
       const rect = guia.getBoundingClientRect();
       const videoRect = video.getBoundingClientRect();
 
-      // Coordenadas relativas ao vídeo (Recorte preciso)
       const cropX = (rect.left - videoRect.left) * scaleX;
       const cropY = (rect.top - videoRect.top) * scaleY;
       const cropW = rect.width * scaleX;
@@ -290,23 +292,15 @@
 
       canvas.width = cropW;
       canvas.height = cropH;
-
-      // Desenha só o pedaço que estava no retângulo
       ctx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
 
-      // 2. Processa OCR
       try {
-        if(modoAtual === 'preco') {
-          await worker.setParameters({ tessedit_char_whitelist: '0123456789$,.% ' });
-        } else {
-          await worker.setParameters({ tessedit_char_whitelist: '' });
-        }
+        if(modoAtual === 'preco') await worker.setParameters({ tessedit_char_whitelist: '0123456789$,.% ' });
+        else await worker.setParameters({ tessedit_char_whitelist: '' });
 
         const { data: { text } } = await worker.recognize(canvas);
-        
         loading.style.display = 'none';
         processarLeitura(text);
-
       } catch(e) {
         loading.style.display = 'none';
         alert("Erro na leitura.");
@@ -318,60 +312,44 @@
       const titulo = document.getElementById('confirmTitle');
       const valor = document.getElementById('resultValue');
 
-      // Pausa o vídeo (congelar imagem) para user ver o que tirou
-      // document.getElementById('videoFeed').pause(); 
-
       if(modoAtual === 'preco') {
-        // Extrair número
         const regex = /(\d{1,4}[.,]\d{2})/g;
         const matches = texto.match(regex);
         if(matches) {
-           // Pega maior valor
            const nums = matches.map(m => parseFloat(m.replace('.','').replace(',','.')));
-           const val = Math.max(...nums.filter(n => n < 5000)); // Filtro < 5000
+           const val = Math.max(...nums.filter(n => n < 5000)); 
            tempPreco = val;
-           
-           titulo.innerText = "Preço Identificado";
+           titulo.innerText = "Preço:";
            valor.innerText = `R$ ${val.toFixed(2).replace('.',',')}`;
            modal.style.display = 'flex';
         } else {
-           alert("Não achei números. Tente de novo.");
-           // document.getElementById('videoFeed').play();
+           alert("Não encontrei números. Aproxime mais.");
         }
-
       } else {
-        // Nome
         const nomeLimpo = texto.replace(/\n/g, ' ').trim() || "Item sem nome";
         tempNome = nomeLimpo;
-        
-        titulo.innerText = "Nome do Produto";
+        titulo.innerText = "Nome:";
         valor.innerText = nomeLimpo;
-        valor.style.fontSize = "20px";
+        valor.style.fontSize = "18px";
         modal.style.display = 'flex';
       }
     }
 
     function tentarNovamente() {
       document.getElementById('confirmModal').style.display = 'none';
-      // document.getElementById('videoFeed').play(); // Descongela
     }
 
     function confirmarLeitura() {
       document.getElementById('confirmModal').style.display = 'none';
-
       if(modoAtual === 'preco') {
-        // Passa para o próximo passo: NOME
         modoAtual = 'nome';
         configurarOverlay('nome');
-        // Câmera continua aberta
       } else {
-        // Fim do scan: Fecha câmera e abre quantidade
         fecharCamera();
         abrirQtdModal();
       }
     }
 
-    // --- FINALIZAÇÃO (Quantidade) ---
     function abrirQtdModal() {
       document.getElementById('finalQtd').value = 1;
       const resumo = document.getElementById('resumoFinal');
@@ -389,31 +367,20 @@
 
     function salvarItem() {
       const qtd = parseInt(document.getElementById('finalQtd').value) || 1;
-      dados.itens.push({
-        nome: tempNome,
-        preco: tempPreco,
-        qtd: qtd
-      });
+      dados.itens.push({ nome: tempNome, preco: tempPreco, qtd: qtd });
       salvar();
       document.getElementById('qtdModal').style.display = 'none';
     }
 
-    // --- MANUAL ---
     function addManual() {
       const nome = prompt("Nome do produto:") || "Item Manual";
       const preco = parseFloat((prompt("Preço Unitário:")||"").replace(',','.'));
-      if(preco) {
-        tempNome = nome;
-        tempPreco = preco;
-        abrirQtdModal();
-      }
+      if(preco) { tempNome = nome; tempPreco = preco; abrirQtdModal(); }
     }
 
-    // --- UI E LISTA ---
     function atualizarUI() {
       const total = dados.itens.reduce((acc, i) => acc + (i.preco * i.qtd), 0);
       const formatter = new Intl.NumberFormat('pt-BR', {minimumFractionDigits:2});
-      
       document.getElementById('totalDisplay').innerText = "R$ " + formatter.format(total);
       
       const rest = dados.meta - total;
@@ -441,31 +408,66 @@
       document.getElementById('listaModal').style.display = 'flex';
     }
 
-    function remover(i) {
-      if(confirm("Remover?")) { dados.itens.splice(i,1); salvar(); verLista(); }
-    }
+    function remover(i) { if(confirm("Remover?")) { dados.itens.splice(i,1); salvar(); verLista(); } }
 
-    // --- EXPORT ---
-    function zap() {
-      let msg = "*Lista de Compras*\n";
-      let tot = 0;
-      dados.itens.forEach(i => {
-        const t = i.preco*i.qtd; tot+=t;
-        msg += `${i.qtd}x ${i.nome} (R$ ${t.toFixed(2)})\n`;
-      });
-      msg += `\n*TOTAL: R$ ${tot.toFixed(2)}*`;
-      window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`);
-    }
+    // --- NOVA FUNÇÃO DE COMPARTILHAMENTO (NATIVO) ---
+    async function compartilharNative(tipo) {
+        // Prepara texto base
+        const total = dados.itens.reduce((acc, i) => acc + (i.preco * i.qtd), 0);
+        let textoLista = "🛒 *Minha Lista de Compras*\n\n";
+        dados.itens.forEach(i => {
+            textoLista += `▪ ${i.qtd}x ${i.nome} - R$ ${(i.preco*i.qtd).toFixed(2)}\n`;
+        });
+        textoLista += `\n💰 *Total: R$ ${total.toFixed(2)}*`;
 
-    function pdf() {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-      doc.text("Lista LimitCalc", 20,20);
-      doc.autoTable({
-        head:[['Qtd','Item','Total']],
-        body: dados.itens.map(i => [i.qtd, i.nome, `R$ ${(i.preco*i.qtd).toFixed(2)}`])
-      });
-      doc.save('lista.pdf');
+        if (tipo === 'whatsapp') {
+            // Tenta usar API nativa de compartilhamento primeiro (melhor experiência)
+            if (navigator.share) {
+                try {
+                    await navigator.share({
+                        title: 'Minha Lista LimitCalc',
+                        text: textoLista
+                    });
+                } catch (err) {
+                    // Se falhar ou user cancelar, fallback para link direto
+                    window.open(`https://wa.me/?text=${encodeURIComponent(textoLista)}`);
+                }
+            } else {
+                // Fallback para Desktop
+                window.open(`https://wa.me/?text=${encodeURIComponent(textoLista)}`);
+            }
+        } 
+        
+        else if (tipo === 'pdf') {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.text("LimitCalc - Lista de Compras", 20, 20);
+            doc.autoTable({
+                startY: 30,
+                head:[['Qtd','Item','Total']],
+                body: dados.itens.map(i => [i.qtd, i.nome, `R$ ${(i.preco*i.qtd).toFixed(2)}`])
+            });
+            doc.text(`Total Final: R$ ${total.toFixed(2)}`, 20, doc.lastAutoTable.finalY + 15);
+            
+            // GERAR ARQUIVO PARA COMPARTILHAMENTO NATIVO (Abre menu "Salvar em...")
+            if (navigator.canShare && navigator.share) {
+                const blob = doc.output('blob');
+                const file = new File([blob], "lista_compras.pdf", { type: "application/pdf" });
+                try {
+                    await navigator.share({
+                        files: [file],
+                        title: 'Lista de Compras',
+                        text: 'Segue minha lista em PDF.'
+                    });
+                } catch (err) {
+                     // Se não der suporte a arquivo, baixa normal
+                     doc.save('lista_compras.pdf');
+                }
+            } else {
+                // Computador normal
+                doc.save('lista_compras.pdf');
+            }
+        }
     }
   </script>
 </body>
