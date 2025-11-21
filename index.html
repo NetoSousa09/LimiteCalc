@@ -3,13 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LimitCalc</title>
+  <title>LimitCalc - Sousa Edition</title>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
   <style>
+    /* MANTIVE SEU CSS, SÓ ADICIONEI TRATAMENTO DE ERRO VISUAL */
     body{font-family:Arial,sans-serif;background:#f4f4f4;margin:0;color:#333}
     .container{max-width:500px;margin:0 auto;background:white;min-height:100vh;padding-bottom:20px}
     header{background:#00bd56;color:white;text-align:center;padding:30px;font-size:40px;font-weight:bold}
     header span{font-size:60px;color:#000}
-    #circle{width:320px;height:320px;margin:40px auto;border-radius:50%;border:28px solid #4CAF50;position:relative;background:#fff;box-shadow:0 0 25px rgba(0,0,0,.15)}
+    #circle{width:320px;height:320px;margin:40px auto;border-radius:50%;border:28px solid #4CAF50;position:relative;background:#fff;box-shadow:0 0 25px rgba(0,0,0,.15);transition: border-color 0.5s}
     #progress{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:70px;font-weight:bold;color:#00bd56}
     .btn{padding:18px 32px;margin:15px;font-size:22px;border:none;border-radius:15px;cursor:pointer;box-shadow:0 5px 15px rgba(0,0,0,.2);width:90%;max-width:400px}
     .btn-primary{background:#00bd56;color:white}
@@ -18,126 +20,236 @@
     .delete{color:red;font-size:28px;cursor:pointer}
     #limitDiv{text-align:center;padding:20px}
     #limitDiv input{padding:15px;font-size:24px;width:200px;border-radius:12px;border:2px solid #ddd;margin:10px}
+    #statusOCR{text-align: center; font-weight: bold; color: #555; margin-top: 10px; display: none;}
     #botoesFinais{display:none;justify-content:center;gap:30px;margin:30px}
   </style>
-  <!-- Tesseract leve que NUNCA estoura memória -->
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
 </head>
 <body>
   <div class="container">
     <header>LimitCalc <span>Cart</span></header>
+    
     <div id="limitDiv">
-      <input type="number" id="limite" placeholder="Seu limite R$" step="0.01">
+      <input type="number" id="limiteInput" placeholder="Seu limite R$" step="0.01">
       <button class="btn btn-primary" onclick="definirLimite()">Definir Limite</button>
     </div>
+
     <div id="circle"><div id="progress">R$ 0,00</div></div>
+    
     <div style="text-align:center">
-      <button class="btn btn-capture" onclick="iniciarCaptura()">Capturar Etiqueta</button>
+      <!-- Input file invisível para melhor controle -->
+      <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none" onchange="processarImagem(this)">
+      
+      <button class="btn btn-capture" id="btnCam" onclick="document.getElementById('cameraInput').click()">Capturar Etiqueta</button>
+      <div id="statusOCR">Carregando IA...</div>
       <button class="btn btn-primary" onclick="abrirTeclado()">Adicionar Manual</button>
     </div>
+
     <div id="listaItens" style="margin:20px;"></div>
+    
     <div id="botoesFinais">
       <button class="btn btn-primary" onclick="alert('Lista salva no celular!')">Ver Lista Salva</button>
     </div>
   </div>
 
   <script>
-    let limite=0,total=0,itens=[];
-    if(localStorage.limitCalc){const d=JSON.parse(localStorage.limitCalc);limite=d.limite||0;total=d.total||0;itens=d.itens||[];atualizarTudo()}
+    // ESTADO
+    let estado = { limite: 0, total: 0, itens: [] };
+    let worker = null; // Worker global para reuso
 
-    function definirLimite(){limite=parseFloat(document.getElementById('limite').value)||0;salvar();atualizarTudo()}
-    function atualizarTudo(){
-      document.getElementById('progress').innerText=`R$ ${total.toFixed(2).replace('.',',')}`;
-      const perc=limite>0?total/limite*100:0;
-      let cor='#4CAF50'; if(perc>=95)cor='#f44336'; else if(perc>=50)cor='#ff9800';
-      document.querySelector('#circle').style.borderColor=cor;
-      document.getElementById('botoesFinais').style.display=itens.length>0?'flex':'none';
-      renderLista(); salvar();
-    }
-    function renderLista(){
-      document.getElementById('listaItens').innerHTML=itens.map((i,idx)=>`<div class="item"><span>${i.nome} - R$ ${i.preco.toFixed(2).replace('.',',')}</span><span class="delete" onclick="remover(${idx})">Excluir</span></div>`).join('');
-    }
-    function adicionar(nome,preco){
-      if(preco<=0)return;
-      itens.push({nome,preco}); total+=preco; atualizarTudo();
-    }
-    function remover(idx){total-=itens[idx].preco; itens.splice(idx,1); atualizarTudo();}
-    function salvar(){localStorage.limitCalc=JSON.stringify({limite,total,itens})}
+    // INICIALIZAÇÃO SEGURA
+    window.onload = async () => {
+      carregarDados();
+      prepararOCR();
+    };
 
-    function abrirTeclado(){
-      const nome=prompt("Nome do produto:");
-      if(!nome)return;
-      const pStr=prompt("Preço (ex: 16,98):");
-      const p=parseFloat(pStr.replace(',','.'));
-      if(p>0)adicionar(nome,p);
+    function carregarDados() {
+      try {
+        if (localStorage.limitCalc) {
+          const d = JSON.parse(localStorage.limitCalc);
+          estado.limite = d.limite || 0;
+          estado.total = d.total || 0;
+          estado.itens = d.itens || [];
+          document.getElementById('limiteInput').value = estado.limite || '';
+          atualizarInterface();
+        }
+      } catch (e) {
+        console.error("Erro ao carregar dados", e);
+        localStorage.removeItem('limitCalc'); // Reseta se estiver corrompido
+      }
     }
 
-    // CAPTURA IMUNE A MEMÓRIA + ATACADO/VAREJO
-    async function iniciarCaptura(){
-      const input=document.createElement('input');
-      input.type='file'; input.accept='image/*'; input.capture='environment';
-      input.onchange=async e=>{
-        const file=e.target.files[0]; if(!file)return;
+    function salvar() {
+      localStorage.limitCalc = JSON.stringify(estado);
+    }
 
-        // COMPRESSÃO FORTE = NUNCA ESTOURA MEMÓRIA
-        const img=new Image();
-        img.onload=()=>{
-          const canvas=document.createElement('canvas');
-          const ctx=canvas.getContext('2d');
-          canvas.width=600; canvas.height=600*(img.height/img.width);
-          ctx.drawImage(img,0,0,canvas.width,canvas.height);
-          const dataUrl=canvas.toDataURL('image/jpeg',0.5); // 50% qualidade
+    function definirLimite() {
+      const val = parseFloat(document.getElementById('limiteInput').value);
+      if (!isNaN(val)) {
+        estado.limite = val;
+        salvar();
+        atualizarInterface();
+      }
+    }
 
-          // Loading leve
-          const load=document.createElement('div');
-          load.textContent='Lendo...'; load.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#00bd56;color:white;padding:20px 40px;border-radius:20px;font-size:22px;z-index:9999';
-          document.body.appendChild(load);
+    function atualizarInterface() {
+      document.getElementById('progress').innerText = `R$ ${estado.total.toFixed(2).replace('.', ',')}`;
+      
+      const perc = estado.limite > 0 ? (estado.total / estado.limite) * 100 : 0;
+      let cor = '#4CAF50';
+      if (perc >= 100) cor = '#000000'; // Estourou fica preto ou roxo
+      else if (perc >= 90) cor = '#f44336';
+      else if (perc >= 60) cor = '#ff9800';
+      
+      document.getElementById('circle').style.borderColor = cor;
+      
+      const lista = document.getElementById('listaItens');
+      lista.innerHTML = estado.itens.map((i, idx) => 
+        `<div class="item">
+            <span>${i.nome} <small>(${i.qtd || 1}x)</small> <br> <b>R$ ${i.preco.toFixed(2).replace('.',',')}</b></span>
+            <span class="delete" onclick="remover(${idx})">Excluir</span>
+         </div>`
+      ).join('');
+      
+      document.getElementById('botoesFinais').style.display = estado.itens.length > 0 ? 'flex' : 'none';
+    }
 
-          (async()=>{
-            try{
-              const worker=await Tesseract.createWorker();
-              await worker.load();
-              await worker.loadLanguage('por');
-              await worker.initialize('por',Tesseract.OEM.LSTM_ONLY);
-              await worker.setParameters({tessedit_pageseg_mode: Tesseract.PSM.SINGLE_BLOCK});
-              const {data:{text}}=await worker.recognize(dataUrl);
-              await worker.terminate();
-              document.body.removeChild(load);
+    function adicionar(nome, preco, qtd = 1) {
+      estado.itens.push({ nome, preco, qtd });
+      estado.total += preco;
+      salvar();
+      atualizarInterface();
+    }
 
-              const linhas=text.toUpperCase().split('\n');
-              const nome=linhas.find(l=>l.length>5 && !l.includes('R$') && !l.match(/\d{4}/)) || 'Produto';
-              const precos=linhas.flatMap(l=>[...l.matchAll(/R?\s*\$\s*([\d.,]+)/g)].map(m=>parseFloat(m[1].replace('.','').replace(',','.')))).filter(n=>n>1&&n<5000);
+    function remover(idx) {
+      estado.total -= estado.itens[idx].preco;
+      estado.itens.splice(idx, 1);
+      salvar();
+      atualizarInterface();
+    }
 
-              if(precos.length===0){
-                abrirTeclado('Não leu preço. Digite manualmente:');
-                return;
-              }
+    function abrirTeclado(msg = null) {
+      const nome = prompt(msg || "Nome do produto:");
+      if (!nome) return;
+      
+      let pStr = prompt("Preço unitário (ex: 16,98):");
+      if (!pStr) return;
+      
+      // Tratamento melhorado de input manual
+      pStr = pStr.replace(',', '.');
+      const preco = parseFloat(pStr);
+      
+      if (preco > 0) adicionar(nome, preco);
+      else alert("Preço inválido!");
+    }
 
-              if(precos.length===1){
-                if(confirm(`${nome}\nR$ ${precos[0].toFixed(2).replace('.',',')}\n\nAdicionar?`)){
-                  adicionar(nome,precos[0]);
-                }
-              }else{
-                const varejo=Math.max(...precos);
-                const atacado=Math.min(...precos);
-                const qtdMin=6; // padrão brasileiro
-                const qtd=prompt(`Dois preços!\n\n${nome}\n• Varejo: R$ ${varejo.toFixed(2)}\n• Atacado: R$ ${atacado.toFixed(2)} (a partir de ${qtdMin})\n\nQuantas unidades?`,qtdMin);
-                if(qtd===null)return;
-                const quantidade=parseInt(qtd)||1;
-                const precoFinal=quantidade>=qtdMin?atacado:varejo;
-                if(confirm(`Adicionar ${quantidade}x ${nome} = R$ ${(quantidade*precoFinal).toFixed(2)}?`)){
-                  adicionar(`${nome} (${quantidade}x)`, quantidade*precoFinal);
-                }
-              }
-            }catch(err){
-              document.body.removeChild(load);
-              abrirTeclado('Erro de leitura. Digite manualmente:');
-            }
-          })();
-        };
-        img.src=URL.createObjectURL(file);
-      };
-      input.click();
+    // --- OCR OTIMIZADO ---
+
+    async function prepararOCR() {
+      const status = document.getElementById('statusOCR');
+      const btn = document.getElementById('btnCam');
+      status.style.display = 'block';
+      status.innerText = 'Iniciando Motor de IA...';
+      btn.disabled = true;
+
+      try {
+        worker = await Tesseract.createWorker();
+        await worker.loadLanguage('por');
+        await worker.initialize('por');
+        await worker.setParameters({
+            tessedit_char_whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz$.,% ', // Foca em preços e texto
+        });
+        status.style.display = 'none';
+        btn.disabled = false;
+        console.log("OCR Pronto");
+      } catch (err) {
+        status.innerText = 'Erro ao carregar IA. Use manual.';
+        console.error(err);
+      }
+    }
+
+    async function processarImagem(input) {
+      const file = input.files[0];
+      if (!file || !worker) return;
+
+      const load = document.createElement('div');
+      load.textContent = 'Lendo Etiqueta...';
+      load.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#00bd56;color:white;padding:30px;border-radius:20px;font-size:24px;z-index:9999;box-shadow:0 0 100px rgba(0,0,0,0.5)';
+      document.body.appendChild(load);
+
+      try {
+        // Tesseract lê direto do arquivo (resolve rotação melhor que canvas manual)
+        const { data: { text } } = await worker.recognize(file);
+        
+        document.body.removeChild(load);
+        analisarTexto(text);
+        
+      } catch (err) {
+        document.body.removeChild(load);
+        alert("Erro na leitura. Tente focar melhor.");
+      }
+      input.value = ''; // Limpa para permitir selecionar mesma foto se quiser
+    }
+
+    function analisarTexto(text) {
+      console.log("Texto lido:", text); // Para debug
+      const linhas = text.toUpperCase().split('\n');
+      
+      // Regex melhorada: Aceita "R$ 10,00", "10.00", "10,00" mas evita datas como 2024
+      // Captura números que parecem dinheiro
+      const regexPreco = /R?\s*\$?\s*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})/g;
+      
+      let precosEncontrados = [];
+      
+      // Varredura no texto completo
+      let match;
+      while ((match = regexPreco.exec(text)) !== null) {
+          // Limpa o valor achado para formato JS (ponto decimal, sem milhar)
+          let valorLimpo = match[1];
+          
+          // Se tem vírgula no final (padrão BR 10,90), substitui por ponto
+          if (valorLimpo.includes(',') && !valorLimpo.includes('.')) {
+             valorLimpo = valorLimpo.replace(',', '.');
+          } 
+          // Se tem ponto e vírgula (1.000,00), remove ponto e troca vírgula
+          else if (valorLimpo.includes('.') && valorLimpo.includes(',')) {
+             valorLimpo = valorLimpo.replace('.', '').replace(',', '.');
+          }
+          
+          const floatVal = parseFloat(valorLimpo);
+          if (floatVal > 0.05 && floatVal < 10000) { // Filtro de ruído
+             precosEncontrados.push(floatVal);
+          }
+      }
+
+      if (precosEncontrados.length === 0) {
+        abrirTeclado('Preço não identificado. Digite:');
+        return;
+      }
+
+      // Lógica Simplificada: Pega o maior valor (geralmente o preço principal em destaque)
+      // Ou se tiver 2 valores próximos, oferece escolha.
+      const nomeProvavel = linhas.find(l => l.length > 4 && !l.match(/\d/)) || "Produto";
+      
+      // Remove duplicatas
+      precosEncontrados = [...new Set(precosEncontrados)].sort((a,b) => b-a);
+
+      if (precosEncontrados.length === 1) {
+         if(confirm(`Adicionar ${nomeProvavel} por R$ ${precosEncontrados[0].toFixed(2)}?`)) {
+            adicionar(nomeProvavel, precosEncontrados[0]);
+         }
+      } else {
+         // Pega o maior (Varejo costuma ser maior que atacado, ou destaque é maior)
+         const maior = precosEncontrados[0];
+         const menor = precosEncontrados[precosEncontrados.length-1];
+         
+         const op = prompt(`Detectamos preços:\nA: R$ ${maior.toFixed(2)}\nB: R$ ${menor.toFixed(2)}\n\nDigite A ou B, ou valor manual:`);
+         if(op?.toUpperCase() === 'A') adicionar(nomeProvavel, maior);
+         else if(op?.toUpperCase() === 'B') adicionar(nomeProvavel, menor);
+         else if(op) {
+            const manual = parseFloat(op.replace(',','.'));
+            if(manual) adicionar(nomeProvavel, manual);
+         }
+      }
     }
   </script>
 </body>
