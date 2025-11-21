@@ -7,39 +7,37 @@
   <style>
     body{font-family:Arial,sans-serif;background:#f4f4f4;margin:0;color:#333}
     .container{max-width:500px;margin:0 auto;background:white;min-height:100vh;padding-bottom:20px}
-    header{background:#00bd56;color:white;text-align:center;padding:20px;font-size:28px}
-    #circle{width:300px;height:300px;margin:30px auto;border-radius:50%;border:25px solid #4CAF50;position:relative;background:#fff;box-shadow:0 0 20px rgba(0,0,0,.1)}
-    #progress{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:70px;font-weight:bold;color:#00bd56}
-    .btn{padding:18px 30px;margin:15px;font-size:20px;border:none;border-radius:15px;cursor:pointer;box-shadow:0 4px 15px rgba(0,0,0,.2)}
+    header{background:#00bd56;color:white;text-align:center;padding:25px;font-size:38px;font-weight:bold}
+    header span{font-size:50px;color:#000} /* carrinho preto e grande */
+    #circle{width:320px;height:320px;margin:40px auto;border-radius:50%;border:28px solid #4CAF50;position:relative;background:#fff;box ambiance:0 0 25px rgba(0,0,0,.15)}
+    #progress{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:72px;font-weight:bold;color:#00bd56}
+    .btn{padding:18px 32px;margin:15px;font-size:22px;border:none;border-radius:15px;cursor:pointer;box-shadow:0 5px 15px rgba(0,0,0,.2)}
     .btn-primary{background:#00bd56;color:white}
     .btn-capture{background:#007bff;color:white}
-    .btn-whatsapp{background:#25D366;color:white}
-    .item{padding:15px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;font-size:18px}
-    .delete{color:red;font-size:24px;cursor:pointer}
-    #tecladoModal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.8);justify-content:center;align-items:center;z-index:999}
-    .teclado-container{background:white;border-radius:20px;padding:30px;width:90%;max-width:420px;text-align:center}
-    .display-preco{font-size:60px;font-weight:bold;margin:30px 0;color:#00bd56}
-    .teclado{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
-    .teclado button{font-size:40px;padding:25px;border-radius:20px;background:#f0f0f0;border:none;box-shadow:0 6px 15px rgba(0,0,0,.1)}
-    .teclado .ok{background:#00bd56;color:white;grid-column:1/4;font-size:32px}
-    .teclado .apagar{background:#ff4444;color:white}
-    #msgErro{background:#fff3cd;color:#856404;padding:15px;border-radius:10px;margin-bottom:20px;font-size:18px}
-    #botoesFinais{display:none;justify-content:center;gap:30px;margin:30px;flex-wrap:wrap}
-    input#nomeProduto{width:100%;padding:18px;margin-top:25px;font-size:20px;border-radius:15px;border:2px solid #ddd}
+    .item{padding:18px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;font-size:20px}
+    .delete{color:red;font-size:28px;cursor:pointer}
     #limitDiv{text-align:center;padding:20px}
-    #limitDiv input{padding:15px;font-size:22px;width:180px;border-radius:12px;border:2px solid #ddd;margin-right:10px}
+    #limitDiv input{padding:15px;font-size:24px;width:200px;border-radius:12px;border:2px solid #ddd;margin-right:10px}
+    #botoesFinais{display:none;justify-content:center;gap:30px;margin:30px}
+    #listaModal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.9);z-index:999;justify-content:center;align-items:center;padding:20px}
+    .modal-content{background:white;border-radius:20px;padding:30px;max-width:90%;max-height:90%;overflow-y:auto;text-align:center}
+    .modal-content h2{font-size:32px;color:#00bd56;margin-bottom:20px}
+    .lista-item{font-size:22px;padding:12px 0;border-bottom:1px solid #eee}
+    .total{font-size:28px;font-weight:bold;color:#00bd56;margin:20px 0}
+    .modal-btn{padding:15px 30px;margin:15px;font-size:22px;border:none;border-radius:15px;cursor:pointer}
+    .btn-salvar{background:#00bd56;color:white}
+    .btn-whatsapp{background:#25D366;color:white}
   </style>
-  <!-- Tesseract versão leve que não estoura memória -->
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.12/pdfmake.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.12/vfs_fonts.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
 </head>
 <body>
   <div class="container">
-    <header>LimitCalc</header>
+    <header>LimitCalc <span>🛒</span></header>
     <div id="limitDiv">
       <input type="number" id="limite" placeholder="Seu limite R$" step="0.01">
-      <button class="btn btn-primary" onclick="definirLimite()">Definir</button>
+      <button class="btn btn-primary" onclick="definirLimite()">Definir Limite</button>
     </div>
     <div id="circle"><div id="progress">R$ 0,00</div></div>
     <div style="text-align:center">
@@ -48,11 +46,25 @@
     </div>
     <div id="listaItens" style="margin:20px;"></div>
     <div id="botoesFinais">
-      <button class="btn btn-primary" onclick="baixarPDF()">Baixar PDF</button>
-      <button class="btn btn-whatsapp" onclick="compartilharWhats()">WhatsApp</button>
+      <button class="btn btn-primary" onclick="abrirListaModal()">Visualizar Lista</button>
     </div>
   </div>
 
+  <!-- Modal Visualizar Lista -->
+  <div id="listaModal">
+    <div class="modal-content">
+      <h2>LimitCalc</h2>
+      <h3>Lista de Produtos</h3>
+      <div id="listaModalItens"></div>
+      <div class="total" id="totalModal"></div>
+      <p style="font-size:18px;color:#666"><em>Data: <span id="dataAtual"></span></em></p>
+      <button class="modal-btn btn-salvar" onclick="baixarPDF()">Salvar Lista em PDF</button>
+      <button class="modal-btn btn-whatsapp" onclick="compartilharWhats()">Compartilhar no WhatsApp</button>
+      <button class="modal-btn" style="background:#ccc;color:#333" onclick="fecharListaModal()">Fechar</button>
+    </div>
+  </div>
+
+  <!-- Modal Teclado (mesmo de antes) -->
   <div id="tecladoModal">
     <div class="teclado-container">
       <div id="msgErro" style="display:none"></div>
@@ -75,7 +87,9 @@
     function atualizarTudo(){
       document.getElementById('progress').innerText=`R$ ${total.toFixed(2).replace('.',',')}`;
       const perc=limite>0?total/limite*100:0;
-      let cor='#4CAF50';if(perc>=90)cor='#f44336';else if(perc>=70)cor='#ff9800';
+      let cor='#4CAF50';
+      if(perc>=95)cor='#f44336';
+      else if(perc>=50)cor='#ff9800';
       document.querySelector('#circle').style.borderColor=cor;
       document.getElementById('botoesFinais').style.display=itens.length>0?'flex':'none';
       renderLista();salvar();
@@ -84,6 +98,7 @@
     function adicionar(nome='',preco=0){if(preco<=0)return;nome=nome||document.getElementById('nomeProduto').value.trim()||`Item R$ ${preco.toFixed(2)}`;itens.push({nome,preco});total+=preco;fecharTeclado();atualizarTudo()}
     function remover(idx){total-=itens[idx].preco;itens.splice(idx,1);atualizarTudo()}
     function salvar(){localStorage.limitCalc=JSON.stringify({limite,total,itens})}
+
     function abrirTeclado(m=''){valorCentavos=0;atualizarDisplay();document.getElementById('nomeProduto').value='';if(m){document.getElementById('msgErro').innerHTML=m;document.getElementById('msgErro').style.display='block'}else document.getElementById('msgErro').style.display='none';document.getElementById('tecladoModal').style.display='flex';setTimeout(()=>document.getElementById('nomeProduto').focus(),300)}
     function fecharTeclado(){document.getElementById('tecladoModal').style.display='none'}
     function digito(n){if(valorCentavos<1000000)valorCentavos=valorCentavos*10+n;atualizarDisplay()}
@@ -91,7 +106,6 @@
     function atualizarDisplay(){const reais=Math.floor(valorCentavos/100).toLocaleString('pt-BR');const centavos=(valorCentavos%100).toString().padStart(2,'0');document.getElementById('reais').innerText=reais;document.getElementById('centavos').innerText=centavos}
     function confirmar(){const preco=valorCentavos/100;if(preco<=0)return alert('Digite um valor!');adicionar('',preco)}
 
-    // CAPTURA 100% IMUNE A MEMÓRIA + REGEX PERFEITA
     function iniciarCaptura(){
       const input=document.createElement('input');input.type='file';input.accept='image/*';input.capture='environment';
       input.onchange=async e=>{
@@ -102,19 +116,19 @@
           const ctx=canvas.getContext('2d');
           canvas.width=600;canvas.height=600*(img.height/img.width);
           ctx.drawImage(img,0,0,canvas.width,canvas.height);
-          const dataUrl=canvas.toDataURL('image/jpeg',0.5); // 50% qualidade = nunca estoura memória
+          const dataUrl=canvas.toDataURL('image/jpeg',0.5);
           try{
             const worker=Tesseract.createWorker({workerPath:'https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/worker.min.js',corePath:'https://cdn.jsdelivr.net/npm/tesseract.js-core@4.0.2/tesseract-core.wasm.js'});
             await worker.load();
             await worker.loadLanguage('por');
-            await worker.initialize('por',{tessedit_pageseg_mode:'6'});
+            await worker.initialize('por');
             const {data:{text}}=await worker.recognize(dataUrl);
             await worker.terminate();
             const preco=extrairPreco(text);
             const nome=extrairNome(text);
             if(preco && confirm(`ENCONTRADO!\n\n${nome}\nR$ ${preco.toFixed(2).replace('.',',')}\n\nAdicionar?`)){adicionar(nome,preco)}
-            else abrirTeclado('Digite o preço manualmente');
-          }catch(err){abrirTeclado('Erro de processamento. Digite manualmente')}
+            else abrirTeclado('Digite manualmente');
+          }catch(err){abrirTeclado('Erro de leitura. Digite manualmente')}
         }
         img.src=URL.createObjectURL(file);
       }
@@ -134,21 +148,52 @@
       return linhas[0]||'Produto';
     }
 
+    // Modal da Lista
+    function abrirListaModal(){
+      document.getElementById('dataAtual').innerText=new Date().toLocaleDateString('pt-BR')+' '+new Date().toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
+      document.getElementById('totalModal').innerText=`TOTAL GERAL: R$ ${total.toFixed(2).replace('.',',')}`;
+      document.getElementById('listaModalItens').innerHTML=itens.map(i=>`<div class="lista-item">${i.nome}<br>R$ ${i.preco.toFixed(2).replace('.',',')}</div>`).join('')||'<p style="color:#999">Nenhum produto adicionado ainda</p>';
+      document.getElementById('listaModal').style.display='flex';
+    }
+    function fecharListaModal(){document.getElementById('listaModal').style.display='none'}
+
     function baixarPDF(){
-      const doc={pageSize:'A6',pageMargins:[15,20,15,20],content:[{text:'LimitCalc',style:'header'},{text:new Date().toLocaleString('pt-BR')},{table:{widths:['*','auto'],body:[[{text:'Produto',bold:true},{text:'Valor',bold:true}],...itens.map(i=>[i.nome,`R$ ${i.preco.toFixed(2).replace('.',',')}`]),[{text:'TOTAL',bold:true},{text:`R$ ${total.toFixed(2).replace('.',',')}`,bold:true}]]}}],styles:{header:{fontSize:24,bold:true,alignment:'center',color:'#00bd56'}}};
+      const doc={
+        pageSize:'A6',pageMargins:[20,30,20,30],
+        content:[
+          {text:'LimitCalc',style:'header',margin:[0,0,0,20]},
+          {text:'Lista de Produtos',style:'subheader',margin:[0,0,0,20]},
+          ...itens.map(i=>({text:i.nome,fontSize:16,margin:[0,0,0,8]},{text:`R$ ${i.preco.toFixed(2).replace('.',',')}`,alignment:'right',fontSize:16,margin:[0,0,0,20]})),
+          {text:`TOTAL GERAL: R$ ${total.toFixed(2).replace('.',',')}`,style:'total',margin:[0,30,0,0]},
+          {text:new Date().toLocaleString('pt-BR'),alignment:'center',fontSize:12,color:'#666',margin:[0,30,0,0]}
+        ],
+        styles:{header:{fontSize:32,bold:true,alignment:'center',color:'#00bd56'},subheader:{fontSize:20,bold:true,alignment:'center'},total:{fontSize:28,bold:true,color:'#00bd56'}}
+      };
       pdfMake.createPdf(doc).download(`LimitCalc_${new Date().toLocaleDateString('pt-BR')}.pdf`);
     }
 
     function compartilharWhats(){
-      const doc={/* mesmo conteúdo do PDF */};
+      const doc={ /* mesmo conteúdo do baixarPDF */ 
+        pageSize:'A6',pageMargins:[20,30,20,30],
+        content:[
+          {text:'LimitCalc',style:'header',margin:[0,0,0,20]},
+          {text:'Lista de Produtos',style:'subheader',margin:[0,0,0,20]},
+          ...itens.map(i=>({text:i.nome,fontSize:16,margin:[0,0,0,8]},{text:`R$ ${i.preco.toFixed(2).replace('.',',')}`,alignment:'right',fontSize:16,margin:[0,0,0,20]})),
+          {text:`TOTAL GERAL: R$ ${total.toFixed(2).replace('.',',')}`,style:'total',margin:[0,30,0,0]},
+          {text:new Date().toLocaleString('pt-BR'),alignment:'center',fontSize:12,color:'#666',margin:[0,30,0,0]}
+        ],
+        styles:{header:{fontSize:32,bold:true,alignment:'center',color:'#00bd56'},subheader:{fontSize:20,bold:true,alignment:'center'},total:{fontSize:28,bold:true,color:'#00bd56'}}
+      };
       pdfMake.createPdf(doc).getBlob(blob=>{
-        const file=new File([blob],"LimitCalc.pdf",{type:"application/pdf"});
-        if(navigator.share&&navigator.canShare({files:[file]}))navigator.share({files:[file],title:'Minha compra',text:'Olha quanto gastei!'});
-        else alert('Use o botão Baixar PDF');
+        const file=new File([blob],"MinhaLista_LimitCalc.pdf",{type:"application/pdf"});
+        if(navigator.share&&navigator.canShare({files:[file]})){
+          navigator.share({files:[file],title:'Minha lista do LimitCalc',text:'Olha minha compra de hoje com o LimitCalc! Baixe o app: https://netosousa09.github.io/LimiteCalc'});
+        }else alert('Compartilhamento não disponível no seu navegador');
       });
     }
 
     document.getElementById('tecladoModal').onclick=e=>{if(e.target===document.getElementById('tecladoModal'))fecharTeclado()}
+    document.getElementById('listaModal').onclick=e=>{if(e.target===document.getElementById('listaModal'))fecharListaModal()}
   </script>
 </body>
 </html>
