@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>LimitCalc Final</title>
+  <title>LimitCalc Gold</title>
   
   <!-- Bibliotecas -->
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
@@ -11,15 +11,24 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
   <style>
-    :root { --primary: #00d2d3; --dark: #222f3e; --bg: #f0f2f5; }
-    body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding-bottom: 100px; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+    :root { 
+        --header-green: #10ac84; 
+        --btn-blue: #0984e3; 
+        --bg: #f0f2f5; 
+        --text-dark: #222f3e;
+    }
+    body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding-bottom: 50px; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
 
-    /* HEADER */
-    header { background: #10ac84; color: white; padding: 15px 20px; border-radius: 0 0 20px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-    h1 { margin: 0; font-size: 20px; font-weight: bold; letter-spacing: 1px; }
-    .btn-reset { background: rgba(255,255,255,0.2); border: none; color: white; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; cursor: pointer; }
+    /* HEADER AJUSTADO */
+    header { background: var(--header-green); color: white; padding: 20px; border-radius: 0 0 20px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    
+    /* Título 2x Maior e Scanner Azul */
+    h1 { margin: 0; font-size: 40px; font-weight: 800; letter-spacing: -1px; line-height: 1; }
+    .subtitle { color: var(--btn-blue); font-weight: 800; background: white; padding: 2px 8px; border-radius: 8px; font-size: 20px; vertical-align: middle; margin-left: 5px; display: inline-block; }
 
-    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .btn-reset { background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 15px; border-radius: 20px; font-size: 12px; font-weight: bold; cursor: pointer; }
+
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; display: flex; flex-direction: column; height: 100%; }
 
     /* CARDS */
     .card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-bottom: 15px; text-align: center; }
@@ -27,65 +36,45 @@
     /* META INPUT */
     .meta-wrapper { display: flex; justify-content: center; align-items: center; gap: 5px; }
     .meta-input { border: none; border-bottom: 2px solid #ddd; width: 100px; font-size: 24px; text-align: center; font-weight: bold; color: #333; outline: none; border-radius: 0; background: transparent; }
-    .meta-input:focus { border-bottom-color: #10ac84; }
+    .meta-input:focus { border-bottom-color: var(--header-green); }
 
     /* DISPLAYS */
-    #totalDisplay { font-size: 42px; font-weight: 800; color: #333; }
+    #totalDisplay { font-size: 48px; font-weight: 800; color: var(--header-green); transition: color 0.3s; }
     #restanteDisplay { font-size: 14px; font-weight: 600; color: #777; margin-top: 5px; }
 
-    /* BOTÕES */
-    .btn { width: 100%; padding: 16px; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px; color: white; transition: 0.2s; }
+    /* BOTÕES AJUSTADOS */
+    .btn { width: 100%; padding: 18px; border: none; border-radius: 12px; font-size: 18px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px; color: white; transition: 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
     .btn:active { transform: scale(0.96); }
-    .btn-scan { background: #222f3e; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-    .btn-list { background: #0984e3; }
-    .btn-manual { background: white; border: 2px solid #10ac84; color: #10ac84; }
+    
+    /* Botão Scan agora é VERDE */
+    .btn-scan { background: var(--header-green); }
+    /* Botão Lista é AZUL */
+    .btn-list { background: var(--btn-blue); }
+    .btn-manual { background: white; border: 2px solid var(--header-green); color: var(--header-green); }
+
+    /* LISTA NA TELA PRINCIPAL (NOVIDADE) */
+    #mainListTitle { font-size: 14px; color: #777; margin: 20px 0 10px 0; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+    #mainListContainer { flex: 1; display: flex; flex-direction: column; gap: 10px; padding-bottom: 40px; }
+    .mini-card { background: white; padding: 15px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 5px solid #ddd; box-shadow: 0 2px 5px rgba(0,0,0,0.03); animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
     /* --- CÂMERA OVERLAY --- */
     #cameraOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 5000; flex-direction: column; }
-    
     #videoContainer { position: relative; flex: 1; overflow: hidden; display: flex; justify-content: center; align-items: center; }
     video { width: 100%; height: 100%; object-fit: cover; }
     
-    /* RETÂNGULO DE MIRA (AJUSTADO PARA SER FINO E PEQUENO) */
+    /* MIRA FINA */
     #scanGuide { 
       position: absolute; 
-      /* Dimensões iniciais (serão alteradas via JS) */
-      width: 50%; 
-      height: 60px; 
-      border: 2px solid #00d2d3; 
-      border-radius: 8px; 
-      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7); /* Escurece o fundo */
-      z-index: 5001;
-      transition: all 0.3s ease; /* Animação suave ao mudar de tamanho */
+      width: 50%; height: 55px; 
+      border: 2px solid #00d2d3; border-radius: 8px; 
+      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7); 
+      z-index: 5001; transition: all 0.3s ease; 
     }
-    
-    /* Linha vermelha central para ajudar a mirar no meio dos números */
-    #scanGuide::after {
-      content: '';
-      position: absolute;
-      top: 50%; left: 0; right: 0;
-      height: 1px;
-      background: rgba(255, 0, 0, 0.5);
-    }
-
-    #scanText {
-      position: absolute;
-      top: -40px;
-      left: 0;
-      width: 100%;
-      text-align: center;
-      color: white;
-      font-weight: bold;
-      font-size: 16px;
-      text-shadow: 0 2px 4px rgba(0,0,0,0.8);
-      background: rgba(0,0,0,0.5);
-      padding: 5px 0;
-      border-radius: 5px;
-    }
-
+    #scanGuide::after { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: rgba(255, 0, 0, 0.5); }
+    #scanText { position: absolute; top: -40px; left: 0; width: 100%; text-align: center; color: white; font-weight: bold; font-size: 16px; text-shadow: 0 2px 4px rgba(0,0,0,0.8); background: rgba(0,0,0,0.5); padding: 5px 0; border-radius: 5px; }
     .camera-controls { padding: 30px; background: black; display: flex; justify-content: space-around; align-items: center; }
     .btn-circle { width: 70px; height: 70px; border-radius: 50%; background: white; border: 5px solid #ddd; cursor: pointer; }
-    .btn-circle:active { border-color: #10ac84; background: #eee; }
 
     /* MODAIS */
     #confirmModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 6000; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
@@ -100,7 +89,7 @@
     #loading { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: white; padding: 20px 40px; border-radius: 30px; font-weight: bold; z-index: 8000; }
 
     #listaModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f8f9fa; z-index: 2000; flex-direction: column; }
-    .item-row { background: white; padding: 15px; margin: 10px 15px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 5px solid #10ac84; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+    .item-row { background: white; padding: 15px; margin: 10px 15px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 5px solid var(--header-green); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
   </style>
 </head>
 <body>
@@ -111,10 +100,7 @@
   <div id="cameraOverlay">
     <div id="videoContainer">
       <video id="videoFeed" autoplay playsinline muted></video>
-      <!-- MIRA -->
-      <div id="scanGuide">
-        <div id="scanText">Aponte para o PREÇO</div>
-      </div>
+      <div id="scanGuide"><div id="scanText">Aponte para o PREÇO</div></div>
     </div>
     <div class="camera-controls">
       <button onclick="fecharCamera()" style="background:none; border:none; color:white; font-size:16px;">Cancelar</button>
@@ -145,14 +131,15 @@
         <input type="number" id="finalQtd" class="qtd-input" value="1">
         <button onclick="ajustarQtd(1)" style="font-size:24px; width:50px; height:50px; border-radius:50%; border:none; background:#eee">+</button>
       </div>
-      <div id="resumoFinal" style="margin-bottom:20px; font-weight:bold; color:#10ac84"></div>
+      <div id="resumoFinal" style="margin-bottom:20px; font-weight:bold; color:var(--header-green)"></div>
       <button class="btn" style="background:#222f3e; color:white" onclick="salvarItem()">Adicionar</button>
     </div>
   </div>
 
-  <!-- APP -->
+  <!-- APP UI -->
   <header>
-    <h1>LimitCalc Scanner</h1>
+    <!-- Título Gigante + Scanner Azul -->
+    <h1>LimitCalc<span class="subtitle">Scanner</span></h1>
     <button class="btn-reset" onclick="limparTudo()">🗑️ Limpar</button>
   </header>
 
@@ -160,35 +147,41 @@
     <div class="card">
       <label style="color:#aaa; font-size:12px; font-weight:bold">META DE GASTOS</label>
       <div class="meta-wrapper">
-        <span style="font-size:24px; color:#10ac84">R$</span>
+        <span style="font-size:24px; color:var(--header-green)">R$</span>
         <input type="number" class="meta-input" id="limiteInput" placeholder="0" onblur="salvarMeta()">
       </div>
     </div>
 
     <div class="card">
+      <!-- Valor total que muda de cor -->
       <div id="totalDisplay">0,00</div>
       <div id="restanteDisplay">Disponível: R$ 0,00</div>
     </div>
 
+    <!-- Botão Verde -->
     <button class="btn btn-scan" onclick="iniciarCamera()">📷 Escanear Produto</button>
     <button class="btn btn-manual" onclick="addManual()">⌨️ Digitar Manual</button>
     <button class="btn btn-list" onclick="verLista()">📄 Ver Carrinho / Salvar</button>
+
+    <!-- LISTA NA TELA PRINCIPAL (Produtos surgem aqui) -->
+    <div id="mainListTitle">Itens Adicionados:</div>
+    <div id="mainListContainer">
+        <!-- Os itens vão aparecer aqui automaticamente -->
+    </div>
   </div>
 
-  <!-- LISTA -->
+  <!-- MODAL LISTA COMPLETA -->
   <div id="listaModal">
     <div style="background:white; padding:15px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 2px 5px rgba(0,0,0,0.05)">
-      <h2 style="margin:0; font-size:18px">Carrinho</h2>
+      <h2 style="margin:0; font-size:18px">Carrinho Completo</h2>
       <button onclick="document.getElementById('listaModal').style.display='none'" style="border:none; background:none; font-size:24px">×</button>
     </div>
-    <!-- BOTÕES DE SALVAR ATUALIZADOS -->
+    
+    <!-- APENAS BOTÃO PDF AGORA -->
     <div style="padding:15px; display:flex; gap:10px; flex-direction:column; background:#fff; border-bottom:1px solid #eee">
-        <p style="margin:0; font-size:12px; color:#777">Opções de Compartilhamento:</p>
-        <div style="display:flex; gap:10px">
-            <button class="btn" style="background:#25D366; margin:0; font-size:14px; flex:1" onclick="compartilharNative('whatsapp')">WhatsApp</button>
-            <button class="btn" style="background:#e84393; margin:0; font-size:14px; flex:1" onclick="compartilharNative('pdf')">Salvar PDF</button>
-        </div>
+        <button class="btn" style="background:#e84393; margin:0; font-size:16px" onclick="compartilharNative('pdf')">📤 Salvar / Compartilhar PDF</button>
     </div>
+    
     <div id="listaContainer" style="flex:1; overflow-y:auto; padding-top:10px"></div>
   </div>
 
@@ -196,15 +189,13 @@
     // --- ESTADO ---
     let dados = { meta: 0, itens: [] };
     let worker = null;
-    
-    // Fluxo
     let stream = null;
     let modoAtual = 'preco'; 
     let tempPreco = 0;
     let tempNome = "";
 
     window.onload = async () => {
-      if(localStorage.limitCalcFinal) dados = JSON.parse(localStorage.limitCalcFinal);
+      if(localStorage.limitCalcGold) dados = JSON.parse(localStorage.limitCalcGold);
       document.getElementById('limiteInput').value = dados.meta || '';
       atualizarUI();
 
@@ -212,31 +203,22 @@
         worker = await Tesseract.createWorker();
         await worker.loadLanguage('por');
         await worker.initialize('por');
-        console.log("OCR Ready");
       } catch(e) { console.error(e); }
     };
 
-    function salvar() { localStorage.limitCalcFinal = JSON.stringify(dados); atualizarUI(); }
+    function salvar() { localStorage.limitCalcGold = JSON.stringify(dados); atualizarUI(); }
     function salvarMeta() { dados.meta = parseFloat(document.getElementById('limiteInput').value)||0; salvar(); }
     function limparTudo() { if(confirm("Apagar tudo?")) { dados={meta:0,itens:[]}; document.getElementById('limiteInput').value=''; salvar(); }}
 
     // --- CÂMERA ---
     async function iniciarCamera() {
-      modoAtual = 'preco';
-      tempPreco = 0;
-      tempNome = "";
-      configurarOverlay('preco');
-
+      modoAtual = 'preco'; tempPreco = 0; tempNome = ""; configurarOverlay('preco');
       try {
         const video = document.getElementById('videoFeed');
-        stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { facingMode: "environment" } 
-        });
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
         video.srcObject = stream;
         document.getElementById('cameraOverlay').style.display = 'flex';
-      } catch(err) {
-        alert("Erro ao abrir câmera.");
-      }
+      } catch(err) { alert("Erro ao abrir câmera."); }
     }
 
     function fecharCamera() {
@@ -249,18 +231,12 @@
     function configurarOverlay(modo) {
       const guia = document.getElementById('scanGuide');
       const texto = document.getElementById('scanText');
-      
       if(modo === 'preco') {
         texto.innerText = "Mire Apenas no NÚMERO";
-        // AJUSTE SOLICITADO: RETÂNGULO BEM MENOR
-        guia.style.width = "50%"; 
-        guia.style.height = "55px"; 
-        guia.style.borderColor = "#00d2d3";
+        guia.style.width = "50%"; guia.style.height = "55px"; guia.style.borderColor = "#00d2d3";
       } else {
         texto.innerText = "Mire Apenas no NOME";
-        guia.style.width = "70%";
-        guia.style.height = "70px"; 
-        guia.style.borderColor = "#feca57";
+        guia.style.width = "70%"; guia.style.height = "70px"; guia.style.borderColor = "#feca57";
       }
     }
 
@@ -268,30 +244,24 @@
       const video = document.getElementById('videoFeed');
       const guia = document.getElementById('scanGuide');
       const loading = document.getElementById('loading');
-
       if(!worker) return alert("IA carregando...");
       loading.style.display = 'block';
 
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
-
-      // Lógica de Recorte (Crop) baseada no tamanho visual da mira
+      
       const videoW = video.videoWidth;
-      const videoH = video.videoHeight;
       const screenW = video.offsetWidth;
-      const screenH = video.offsetHeight;
       const scaleX = videoW / screenW;
-      const scaleY = videoH / screenH;
       const rect = guia.getBoundingClientRect();
       const videoRect = video.getBoundingClientRect();
-
+      
       const cropX = (rect.left - videoRect.left) * scaleX;
-      const cropY = (rect.top - videoRect.top) * scaleY;
+      const cropY = (rect.top - videoRect.top) * (video.videoHeight / video.offsetHeight);
       const cropW = rect.width * scaleX;
-      const cropH = rect.height * scaleY;
+      const cropH = rect.height * (video.videoHeight / video.offsetHeight);
 
-      canvas.width = cropW;
-      canvas.height = cropH;
+      canvas.width = cropW; canvas.height = cropH;
       ctx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
 
       try {
@@ -301,10 +271,7 @@
         const { data: { text } } = await worker.recognize(canvas);
         loading.style.display = 'none';
         processarLeitura(text);
-      } catch(e) {
-        loading.style.display = 'none';
-        alert("Erro na leitura.");
-      }
+      } catch(e) { loading.style.display = 'none'; alert("Erro na leitura."); }
     }
 
     function processarLeitura(texto) {
@@ -313,56 +280,41 @@
       const valor = document.getElementById('resultValue');
 
       if(modoAtual === 'preco') {
-        const regex = /(\d{1,4}[.,]\d{2})/g;
-        const matches = texto.match(regex);
+        const matches = texto.match(/(\d{1,4}[.,]\d{2})/g);
         if(matches) {
            const nums = matches.map(m => parseFloat(m.replace('.','').replace(',','.')));
            const val = Math.max(...nums.filter(n => n < 5000)); 
            tempPreco = val;
-           titulo.innerText = "Preço:";
+           titulo.innerText = "Preço Detectado:";
            valor.innerText = `R$ ${val.toFixed(2).replace('.',',')}`;
            modal.style.display = 'flex';
-        } else {
-           alert("Não encontrei números. Aproxime mais.");
-        }
+        } else { alert("Não encontrei números."); }
       } else {
-        const nomeLimpo = texto.replace(/\n/g, ' ').trim() || "Item sem nome";
-        tempNome = nomeLimpo;
-        titulo.innerText = "Nome:";
-        valor.innerText = nomeLimpo;
+        tempNome = texto.replace(/\n/g, ' ').trim() || "Item sem nome";
+        titulo.innerText = "Nome Detectado:";
+        valor.innerText = tempNome;
         valor.style.fontSize = "18px";
         modal.style.display = 'flex';
       }
     }
 
-    function tentarNovamente() {
-      document.getElementById('confirmModal').style.display = 'none';
-    }
+    function tentarNovamente() { document.getElementById('confirmModal').style.display = 'none'; }
 
     function confirmarLeitura() {
       document.getElementById('confirmModal').style.display = 'none';
-      if(modoAtual === 'preco') {
-        modoAtual = 'nome';
-        configurarOverlay('nome');
-      } else {
-        fecharCamera();
-        abrirQtdModal();
-      }
+      if(modoAtual === 'preco') { modoAtual = 'nome'; configurarOverlay('nome'); } 
+      else { fecharCamera(); abrirQtdModal(); }
     }
 
     function abrirQtdModal() {
       document.getElementById('finalQtd').value = 1;
-      const resumo = document.getElementById('resumoFinal');
-      resumo.innerText = `${tempNome}\nR$ ${tempPreco.toFixed(2).replace('.',',')} un.`;
+      document.getElementById('resumoFinal').innerText = `${tempNome}\nR$ ${tempPreco.toFixed(2).replace('.',',')} un.`;
       document.getElementById('qtdModal').style.display = 'flex';
     }
 
     function ajustarQtd(delta) {
       const el = document.getElementById('finalQtd');
-      let val = parseInt(el.value) || 1;
-      val += delta;
-      if(val < 1) val = 1;
-      el.value = val;
+      let val = parseInt(el.value) || 1; val += delta; if(val < 1) val = 1; el.value = val;
     }
 
     function salvarItem() {
@@ -373,27 +325,63 @@
     }
 
     function addManual() {
-      const nome = prompt("Nome do produto:") || "Item Manual";
-      const preco = parseFloat((prompt("Preço Unitário:")||"").replace(',','.'));
+      const nome = prompt("Nome:") || "Item Manual";
+      const preco = parseFloat((prompt("Preço:")||"").replace(',','.'));
       if(preco) { tempNome = nome; tempPreco = preco; abrirQtdModal(); }
     }
 
+    // --- LÓGICA VISUAL ATUALIZADA ---
     function atualizarUI() {
       const total = dados.itens.reduce((acc, i) => acc + (i.preco * i.qtd), 0);
       const formatter = new Intl.NumberFormat('pt-BR', {minimumFractionDigits:2});
-      document.getElementById('totalDisplay').innerText = "R$ " + formatter.format(total);
       
+      const elTotal = document.getElementById('totalDisplay');
+      elTotal.innerText = "R$ " + formatter.format(total);
+      
+      // Lógica de Cores
+      const pct = dados.meta > 0 ? (total / dados.meta) * 100 : 0;
+      if(pct < 50) elTotal.style.color = "#10ac84"; // Verde (0-49%)
+      else if(pct < 95) elTotal.style.color = "#feca57"; // Amarelo (50-94%)
+      else elTotal.style.color = "#ff7675"; // Vermelho (95%+)
+
+      // Meta Restante
       const rest = dados.meta - total;
       const elRest = document.getElementById('restanteDisplay');
       if(dados.meta > 0) {
         elRest.innerText = `Restam: R$ ${formatter.format(rest)}`;
-        elRest.style.color = rest < 0 ? '#e17055' : '#10ac84';
+        elRest.style.color = rest < 0 ? '#ff7675' : '#777';
       } else {
-        elRest.innerText = "Sem meta";
-        elRest.style.color = "#777";
+        elRest.innerText = "Defina uma meta acima";
       }
+
+      // Renderizar Lista na Tela Principal (De baixo para cima na lógica de inclusão)
+      renderizarListaPrincipal();
     }
 
+    function renderizarListaPrincipal() {
+        const container = document.getElementById('mainListContainer');
+        if(dados.itens.length === 0) {
+            container.innerHTML = "<p style='text-align:center; color:#bbb; margin-top:10px'>Nenhum item adicionado ainda.</p>";
+            return;
+        }
+        // Mapeia e inverte a ordem visual se quiser que o último apareça no topo, 
+        // mas "de baixo pra cima" geralmente significa preencher o espaço.
+        // Vou renderizar padrão:
+        container.innerHTML = dados.itens.map((item, i) => `
+            <div class="mini-card">
+                <div>
+                    <div style="font-weight:bold; color:#555">${item.qtd}x ${item.nome}</div>
+                    <div style="font-size:12px; color:#999">Unit: R$ ${item.preco.toFixed(2)}</div>
+                </div>
+                <div style="text-align:right">
+                    <div style="color:var(--header-green); font-weight:bold">R$ ${(item.preco * item.qtd).toFixed(2).replace('.',',')}</div>
+                    <div style="color:red; font-size:20px; cursor:pointer" onclick="remover(${i})">🗑️</div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // A lista do modal usa a mesma lógica de dados
     function verLista() {
       const div = document.getElementById('listaContainer');
       div.innerHTML = dados.itens.map((item, i) => `
@@ -410,63 +398,24 @@
 
     function remover(i) { if(confirm("Remover?")) { dados.itens.splice(i,1); salvar(); verLista(); } }
 
-    // --- NOVA FUNÇÃO DE COMPARTILHAMENTO (NATIVO) ---
     async function compartilharNative(tipo) {
-        // Prepara texto base
         const total = dados.itens.reduce((acc, i) => acc + (i.preco * i.qtd), 0);
-        let textoLista = "🛒 *Minha Lista de Compras*\n\n";
-        dados.itens.forEach(i => {
-            textoLista += `▪ ${i.qtd}x ${i.nome} - R$ ${(i.preco*i.qtd).toFixed(2)}\n`;
-        });
-        textoLista += `\n💰 *Total: R$ ${total.toFixed(2)}*`;
-
-        if (tipo === 'whatsapp') {
-            // Tenta usar API nativa de compartilhamento primeiro (melhor experiência)
-            if (navigator.share) {
-                try {
-                    await navigator.share({
-                        title: 'Minha Lista LimitCalc',
-                        text: textoLista
-                    });
-                } catch (err) {
-                    // Se falhar ou user cancelar, fallback para link direto
-                    window.open(`https://wa.me/?text=${encodeURIComponent(textoLista)}`);
-                }
-            } else {
-                // Fallback para Desktop
-                window.open(`https://wa.me/?text=${encodeURIComponent(textoLista)}`);
-            }
-        } 
-        
-        else if (tipo === 'pdf') {
+        if (tipo === 'pdf') {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             doc.text("LimitCalc - Lista de Compras", 20, 20);
             doc.autoTable({
-                startY: 30,
-                head:[['Qtd','Item','Total']],
+                startY: 30, head:[['Qtd','Item','Total']],
                 body: dados.itens.map(i => [i.qtd, i.nome, `R$ ${(i.preco*i.qtd).toFixed(2)}`])
             });
             doc.text(`Total Final: R$ ${total.toFixed(2)}`, 20, doc.lastAutoTable.finalY + 15);
             
-            // GERAR ARQUIVO PARA COMPARTILHAMENTO NATIVO (Abre menu "Salvar em...")
             if (navigator.canShare && navigator.share) {
                 const blob = doc.output('blob');
-                const file = new File([blob], "lista_compras.pdf", { type: "application/pdf" });
-                try {
-                    await navigator.share({
-                        files: [file],
-                        title: 'Lista de Compras',
-                        text: 'Segue minha lista em PDF.'
-                    });
-                } catch (err) {
-                     // Se não der suporte a arquivo, baixa normal
-                     doc.save('lista_compras.pdf');
-                }
-            } else {
-                // Computador normal
-                doc.save('lista_compras.pdf');
-            }
+                const file = new File([blob], "lista.pdf", { type: "application/pdf" });
+                try { await navigator.share({ files: [file], title: 'Lista de Compras' }); } 
+                catch (err) { doc.save('lista.pdf'); }
+            } else { doc.save('lista.pdf'); }
         }
     }
   </script>
