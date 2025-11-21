@@ -3,459 +3,469 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>LimitCalc Master</title>
+  <title>LimitCalc Scanner</title>
   
-  <!-- Bibliotecas (OCR, Crop, PDF) -->
+  <!-- Bibliotecas -->
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
   <style>
-    /* Design System */
-    :root { --primary: #00bd56; --secondary: #2d3436; --accent: #0984e3; --bg: #f0f2f5; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); margin: 0; padding-bottom: 100px; touch-action: manipulation; -webkit-font-smoothing: antialiased; }
-    
-    /* Header com Botão Limpar */
-    header { background: linear-gradient(135deg, #11998e, #38ef7d); color: white; padding: 15px 20px; border-radius: 0 0 25px 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
-    h1 { margin: 0; font-size: 20px; font-weight: 800; }
-    .btn-reset { background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 15px; border-radius: 20px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+    :root { --primary: #00d2d3; --dark: #222f3e; --bg: #f0f2f5; }
+    body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding-bottom: 100px; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+
+    /* HEADER */
+    header { background: #10ac84; color: white; padding: 15px 20px; border-radius: 0 0 20px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    h1 { margin: 0; font-size: 20px; font-weight: bold; letter-spacing: 1px; }
+    .btn-reset { background: rgba(255,255,255,0.2); border: none; color: white; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; cursor: pointer; }
 
     .container { max-width: 600px; margin: 0 auto; padding: 20px; }
 
-    /* Cards Informativos */
-    .card { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); margin-bottom: 20px; text-align: center; position: relative; }
-
-    /* Inputs e Displays */
-    .meta-input { border: 2px solid #eee; border-radius: 12px; padding: 8px; font-size: 22px; width: 110px; text-align: center; font-weight: bold; color: #333; outline: none; }
-    .meta-input:focus { border-color: var(--primary); }
+    /* CARDS */
+    .card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-bottom: 15px; text-align: center; }
     
-    #totalDisplay { font-size: 48px; font-weight: 800; color: #333; letter-spacing: -1px; }
-    #restanteDisplay { font-size: 14px; color: #777; margin-top: 5px; font-weight: 600; }
+    /* META INPUT */
+    .meta-wrapper { display: flex; justify-content: center; align-items: center; gap: 5px; }
+    .meta-input { border: none; border-bottom: 2px solid #ddd; width: 100px; font-size: 24px; text-align: center; font-weight: bold; color: #333; outline: none; border-radius: 0; background: transparent; }
+    .meta-input:focus { border-bottom-color: #10ac84; }
 
-    /* Botões de Ação */
-    .btn { width: 100%; padding: 18px; border: none; border-radius: 16px; font-size: 16px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 12px; color: white; box-shadow: 0 5px 15px rgba(0,0,0,0.1); transition: transform 0.1s; }
-    .btn:active { transform: scale(0.98); }
-    .btn-cam { background: #2d3436; }
-    .btn-manual { background: white; border: 2px solid var(--primary); color: var(--primary); box-shadow: none; }
-    .btn-list { background: var(--accent); }
+    /* DISPLAYS */
+    #totalDisplay { font-size: 42px; font-weight: 800; color: #333; }
+    #restanteDisplay { font-size: 14px; font-weight: 600; color: #777; margin-top: 5px; }
 
-    /* Modal de Crop (Recorte) */
-    #cropModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 5000; flex-direction: column; }
-    #cropHeader { padding: 15px; color: white; text-align: center; font-weight: bold; background: rgba(0,0,0,0.5); font-size: 18px; }
-    #imageContainer { flex: 1; overflow: hidden; background: #111; position: relative; }
-    #imageToCrop { max-width: 100%; }
-    .crop-controls { padding: 20px; background: black; display: flex; gap: 15px; }
+    /* BOTÕES */
+    .btn { width: 100%; padding: 16px; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px; color: white; transition: 0.2s; }
+    .btn:active { transform: scale(0.96); }
+    .btn-scan { background: #222f3e; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+    .btn-list { background: #0984e3; }
+    .btn-manual { background: white; border: 2px solid #10ac84; color: #10ac84; }
 
-    /* Modal de Edição Final (Qtd e Nome) */
-    #editModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 5500; justify-content: center; align-items: center; }
-    .edit-box { background: white; width: 85%; max-width: 400px; padding: 25px; border-radius: 20px; text-align: left; }
-    .form-group { margin-bottom: 15px; }
-    .form-label { display: block; font-size: 12px; color: #888; margin-bottom: 5px; font-weight: bold; }
-    .form-input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 18px; box-sizing: border-box; }
-
-    /* Lista de Produtos */
-    #modalLista { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f8f9fa; z-index: 2000; flex-direction: column; }
-    .lista-header { padding: 20px; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
+    /* --- CÂMERA OVERLAY (A Mágica) --- */
+    #cameraOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 5000; flex-direction: column; }
     
-    .item-row { background: white; margin: 10px 15px; padding: 15px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.02); border-left: 5px solid var(--primary); }
-    .item-qtd { background: #eee; color: #333; padding: 5px 10px; border-radius: 8px; font-weight: bold; font-size: 14px; margin-right: 10px; }
-    .item-price { font-size: 18px; font-weight: bold; color: var(--primary); }
-    .item-name { font-size: 15px; color: #333; font-weight: 500; }
+    #videoContainer { position: relative; flex: 1; overflow: hidden; display: flex; justify-content: center; align-items: center; }
+    video { width: 100%; height: 100%; object-fit: cover; }
+    
+    /* O Retângulo de Mira */
+    #scanGuide { 
+      position: absolute; 
+      width: 80%; 
+      height: 150px; 
+      border: 3px solid #00d2d3; 
+      border-radius: 10px; 
+      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7); /* Escurece o resto da tela */
+      z-index: 5001;
+    }
+    #scanText {
+      position: absolute;
+      top: -40px;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      color: white;
+      font-weight: bold;
+      font-size: 18px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+    }
 
-    /* Loading */
-    #loading { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.95); z-index: 6000; flex-direction: column; justify-content: center; align-items: center; }
-    .spinner { width: 50px; height: 50px; border: 5px solid #ddd; border-top: 5px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
-    @keyframes spin { 100% { transform: rotate(360deg); } }
+    /* Controles da Câmera */
+    .camera-controls { padding: 30px; background: black; display: flex; justify-content: space-around; align-items: center; }
+    .btn-circle { width: 70px; height: 70px; border-radius: 50%; background: white; border: 5px solid #ddd; cursor: pointer; }
+    .btn-circle:active { border-color: #10ac84; background: #eee; }
+
+    /* MODAL DE CONFIRMAÇÃO (Onde o user valida) */
+    #confirmModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 6000; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
+    .confirm-box { background: white; padding: 25px; border-radius: 20px; width: 100%; max-width: 350px; text-align: center; }
+    .result-val { font-size: 28px; font-weight: bold; color: #333; margin: 15px 0; word-break: break-word; }
+    .confirm-actions { display: flex; gap: 10px; margin-top: 20px; }
+
+    /* MODAL QUANTIDADE FINAL */
+    #qtdModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.95); z-index: 7000; justify-content: center; align-items: center; }
+    .qtd-box { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); text-align: center; width: 80%; max-width: 350px; }
+    .qtd-input { font-size: 32px; padding: 10px; width: 80px; text-align: center; border: 2px solid #ddd; border-radius: 10px; margin: 0 10px; }
+
+    /* LOADING */
+    #loading { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: white; padding: 20px 40px; border-radius: 30px; font-weight: bold; z-index: 8000; }
+
+    /* LISTA */
+    #listaModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f8f9fa; z-index: 2000; flex-direction: column; }
+    .item-row { background: white; padding: 15px; margin: 10px 15px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 5px solid #10ac84; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
   </style>
 </head>
 <body>
 
   <!-- LOADING -->
-  <div id="loading">
-    <div class="spinner"></div>
-    <h3 id="loadingText" style="color:#333; margin-top:20px">Processando...</h3>
+  <div id="loading">Lendo...</div>
+
+  <!-- CAMERA OVERLAY -->
+  <div id="cameraOverlay">
+    <div id="videoContainer">
+      <video id="videoFeed" autoplay playsinline muted></video>
+      <!-- Guia de Mira -->
+      <div id="scanGuide">
+        <div id="scanText">Aponte para o PREÇO</div>
+      </div>
+    </div>
+    <div class="camera-controls">
+      <button onclick="fecharCamera()" style="background:none; border:none; color:white; font-size:18px;">Cancelar</button>
+      <button class="btn-circle" onclick="capturarFoto()"></button>
+      <div style="width: 60px;"></div> <!-- Espaçador -->
+    </div>
   </div>
 
-  <!-- HEADER -->
+  <!-- MODAL DE CONFIRMAÇÃO (Intermediário) -->
+  <div id="confirmModal">
+    <div class="confirm-box">
+      <h3 id="confirmTitle">Confira o Valor</h3>
+      <div class="result-val" id="resultValue">R$ 10,90</div>
+      <p style="color:#777; font-size:14px">Está correto?</p>
+      <div class="confirm-actions">
+        <button class="btn" style="background:#ff7675; color:white" onclick="tentarNovamente()">Não (Tentar de novo)</button>
+        <button class="btn" style="background:#00b894; color:white" onclick="confirmarLeitura()">Sim (Continuar)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL FINAL (Quantidade) -->
+  <div id="qtdModal">
+    <div class="qtd-box">
+      <h3>Quantidade</h3>
+      <div style="margin: 20px 0; display:flex; justify-content:center; align-items:center;">
+        <button onclick="ajustarQtd(-1)" style="font-size:24px; width:50px; height:50px; border-radius:50%; border:none; background:#eee">-</button>
+        <input type="number" id="finalQtd" class="qtd-input" value="1">
+        <button onclick="ajustarQtd(1)" style="font-size:24px; width:50px; height:50px; border-radius:50%; border:none; background:#eee">+</button>
+      </div>
+      <div id="resumoFinal" style="margin-bottom:20px; font-weight:bold; color:#10ac84"></div>
+      <button class="btn" style="background:#222f3e; color:white" onclick="salvarItem()">Adicionar ao Carrinho</button>
+    </div>
+  </div>
+
+  <!-- APP PRINCIPAL -->
   <header>
-    <h1>LimitCalc</h1>
-    <button class="btn-reset" onclick="limparTudo()">
-      🗑️ Nova Compra
-    </button>
+    <h1>LimitCalc Scanner</h1>
+    <button class="btn-reset" onclick="limparTudo()">🗑️ Limpar</button>
   </header>
 
   <div class="container">
-    <!-- META -->
     <div class="card">
-      <label style="color:#777; font-size:12px; text-transform:uppercase; letter-spacing:1px;">Meta de Gastos</label>
-      <div style="display:flex; justify-content:center; align-items:center; gap:5px; margin-top:5px">
-        <span style="font-size:20px; color:var(--primary)">R$</span>
-        <input type="number" class="meta-input" id="limite" placeholder="0" onblur="salvarMeta()">
+      <label style="color:#aaa; font-size:12px; font-weight:bold">META DE GASTOS</label>
+      <div class="meta-wrapper">
+        <span style="font-size:24px; color:#10ac84">R$</span>
+        <input type="number" class="meta-input" id="limiteInput" placeholder="0" onblur="salvarMeta()">
       </div>
     </div>
 
-    <!-- TOTAL -->
     <div class="card">
       <div id="totalDisplay">0,00</div>
       <div id="restanteDisplay">Disponível: R$ 0,00</div>
     </div>
 
-    <!-- AÇÕES -->
-    <input type="file" id="camera" accept="image/*" capture="environment" style="display:none" onchange="iniciarFluxoCaptura(this)">
-    
-    <button class="btn btn-cam" onclick="document.getElementById('camera').click()">
-      📷 Scanear Produto
-    </button>
-    
-    <button class="btn btn-manual" onclick="abrirEdicaoManual()">
-      ⌨️ Digitar Manual
-    </button>
-
-    <button class="btn btn-list" onclick="verLista()">
-      📄 Ver Lista Completa
-    </button>
+    <button class="btn btn-scan" onclick="iniciarCamera()">📷 Escanear Produto</button>
+    <button class="btn btn-manual" onclick="addManual()">⌨️ Digitar Manual</button>
+    <button class="btn btn-list" onclick="verLista()">📄 Ver Carrinho</button>
   </div>
 
-  <!-- TELA DE RECORTE (CROPPER) -->
-  <div id="cropModal">
-    <div id="cropHeader">Passo 1: Recorte o PREÇO</div>
-    <div id="imageContainer">
-      <img id="imageToCrop" src="">
+  <!-- LISTA MODAL -->
+  <div id="listaModal">
+    <div style="background:white; padding:15px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 2px 5px rgba(0,0,0,0.05)">
+      <h2 style="margin:0; font-size:18px">Carrinho</h2>
+      <button onclick="document.getElementById('listaModal').style.display='none'" style="border:none; background:none; font-size:24px">×</button>
     </div>
-    <div class="crop-controls">
-      <button class="btn" style="background:#ff7675; margin:0" onclick="cancelarCrop()">Cancelar</button>
-      <button class="btn" style="background:#00b09b; margin:0" onclick="processarRecorte()">✅ Confirmar</button>
+    <div style="padding:10px; display:flex; gap:10px;">
+      <button class="btn" style="background:#25D366; margin:0; font-size:14px" onclick="zap()">WhatsApp</button>
+      <button class="btn" style="background:#e84393; margin:0; font-size:14px" onclick="pdf()">PDF</button>
     </div>
-  </div>
-
-  <!-- MODAL DE EDIÇÃO FINAL (QTD / NOME / PREÇO) -->
-  <div id="editModal">
-    <div class="edit-box">
-      <h3 style="margin-top:0; text-align:center">Adicionar Item</h3>
-      
-      <div class="form-group">
-        <label class="form-label">Quantidade</label>
-        <div style="display:flex; gap:10px;">
-           <button onclick="mudarQtd(-1)" style="padding:10px; width:40px; font-weight:bold; background:#eee; border:none; border-radius:8px">-</button>
-           <input type="number" id="inputQtd" class="form-input" value="1" style="text-align:center">
-           <button onclick="mudarQtd(1)" style="padding:10px; width:40px; font-weight:bold; background:#eee; border:none; border-radius:8px">+</button>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">Nome do Produto</label>
-        <input type="text" id="inputNome" class="form-input" placeholder="Ex: Arroz">
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">Preço Unitário (R$)</label>
-        <input type="number" id="inputPreco" class="form-input" step="0.01">
-      </div>
-
-      <div style="display:flex; gap:10px; margin-top:20px">
-        <button class="btn" style="background:#eee; color:#333; margin:0" onclick="fecharEdicao()">Cancelar</button>
-        <button class="btn" style="background:var(--primary); margin:0" onclick="confirmarItem()">Salvar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL LISTA -->
-  <div id="modalLista">
-    <div class="lista-header">
-      <h2 style="margin:0; font-size:18px">Carrinho de Compras</h2>
-      <button onclick="fecharLista()" style="border:none; background:none; font-size:28px; color:#333">×</button>
-    </div>
-    <div style="padding:15px; display:flex; gap:10px; background:white; border-bottom:1px solid #eee">
-      <button class="btn" style="background:#25D366; margin:0; padding:12px; font-size:14px" onclick="zap()">WhatsApp</button>
-      <button class="btn" style="background:#E91E63; margin:0; padding:12px; font-size:14px" onclick="pdf()">PDF</button>
-    </div>
-    <div id="itensContainer" style="flex:1; overflow-y:auto"></div>
+    <div id="listaContainer" style="flex:1; overflow-y:auto"></div>
   </div>
 
   <script>
-    // --- ESTADO DO APP ---
+    // --- ESTADO ---
     let dados = { meta: 0, itens: [] };
     let worker = null;
-    let cropper = null;
     
-    // Controle do Fluxo de Captura
-    let faseCaptura = 'preco'; // 'preco' ou 'nome'
+    // Variáveis de fluxo
+    let stream = null;
+    let modoAtual = 'preco'; // 'preco' ou 'nome'
     let tempPreco = 0;
+    let tempNome = "";
 
     // --- INICIALIZAÇÃO ---
     window.onload = async () => {
-      if(localStorage.limitCalcMaster) dados = JSON.parse(localStorage.limitCalcMaster);
-      document.getElementById('limite').value = dados.meta || '';
-      atualizarTela();
-      
-      // Carregar Tesseract (OCR)
+      if(localStorage.limitCalcScan) dados = JSON.parse(localStorage.limitCalcScan);
+      document.getElementById('limiteInput').value = dados.meta || '';
+      atualizarUI();
+
+      // Pré-carrega OCR
       try {
         worker = await Tesseract.createWorker();
         await worker.loadLanguage('por');
         await worker.initialize('por');
-        console.log("IA Pronta");
+        console.log("OCR Ready");
       } catch(e) { console.error(e); }
     };
 
-    function salvar() {
-      localStorage.limitCalcMaster = JSON.stringify(dados);
-      atualizarTela();
-    }
-    
-    function salvarMeta() {
-      dados.meta = parseFloat(document.getElementById('limite').value) || 0;
-      salvar();
-    }
+    function salvar() { localStorage.limitCalcScan = JSON.stringify(dados); atualizarUI(); }
+    function salvarMeta() { dados.meta = parseFloat(document.getElementById('limiteInput').value)||0; salvar(); }
+    function limparTudo() { if(confirm("Apagar tudo?")) { dados={meta:0,itens:[]}; document.getElementById('limiteInput').value=''; salvar(); }}
 
-    function limparTudo() {
-        if(confirm("Tem certeza? Isso apagará toda a sua lista atual.")) {
-            dados = { meta: 0, itens: [] };
-            document.getElementById('limite').value = '';
-            salvar();
-        }
-    }
-
-    // --- CAPTURA E FLUXO DE CROPPING ---
-    function iniciarFluxoCaptura(input) {
-      if(!input.files[0]) return;
-      
-      const file = input.files[0];
-      const reader = new FileReader();
-      
-      reader.onload = (e) => {
-        const img = document.getElementById('imageToCrop');
-        img.src = e.target.result;
-        
-        // Começa Fase 1: Preço
-        faseCaptura = 'preco';
-        document.getElementById('cropHeader').innerText = "PASSO 1: Recorte SOMENTE o VALOR";
-        document.getElementById('cropHeader').style.background = "#d63031"; // Vermelho para atenção
-        
-        document.getElementById('cropModal').style.display = 'flex';
-        iniciarCropper(img);
-      };
-      reader.readAsDataURL(file);
-      input.value = ''; 
-    }
-
-    function iniciarCropper(imgElement) {
-      if(cropper) cropper.destroy();
-      cropper = new Cropper(imgElement, {
-        viewMode: 1,
-        dragMode: 'move',
-        autoCropArea: 0.5,
-        ready() {} // Callback
-      });
-    }
-
-    async function processarRecorte() {
-      if(!cropper) return;
-
-      // 1. Pega a imagem recortada
-      const canvas = cropper.getCroppedCanvas({ width: 600 });
-      const loading = document.getElementById('loading');
-      const loadingText = document.getElementById('loadingText');
-      
-      loading.style.display = 'flex';
-      document.getElementById('cropModal').style.display = 'none'; // Esconde crop temporariamente
+    // --- CÂMERA AO VIVO ---
+    async function iniciarCamera() {
+      // Reseta fluxo
+      modoAtual = 'preco';
+      tempPreco = 0;
+      tempNome = "";
+      configurarOverlay('preco');
 
       try {
-        // 2. OCR
-        if(!worker) throw new Error("IA carregando...");
-        
-        // Configura IA dependendo da fase
-        if(faseCaptura === 'preco') {
-            loadingText.innerText = "Lendo Números...";
-            await worker.setParameters({ tessedit_char_whitelist: '0123456789$,.% ' }); // Só numeros
-        } else {
-            loadingText.innerText = "Lendo Texto...";
-            await worker.setParameters({ tessedit_char_whitelist: '' }); // Texto livre
-        }
-
-        // Lê
-        const { data: { text } } = await worker.recognize(canvas);
-        
-        // 3. Decisão baseada na fase
-        if(faseCaptura === 'preco') {
-            // Processa Preço
-            const val = extrairPreco(text);
-            if(val > 0) {
-                tempPreco = val;
-                // Vai para Fase 2: Nome
-                faseCaptura = 'nome';
-                loading.style.display = 'none';
-                document.getElementById('cropHeader').innerText = "PASSO 2: Recorte o NOME do produto";
-                document.getElementById('cropHeader').style.background = "#0984e3"; // Azul
-                document.getElementById('cropModal').style.display = 'flex'; // Reabre crop
-                // Reseta a caixa de crop para o centro
-                cropper.reset(); 
-            } else {
-                alert("Não entendi o preço. Tente recortar melhor.");
-                loading.style.display = 'none';
-                document.getElementById('cropModal').style.display = 'flex';
-            }
-
-        } else {
-            // Processa Nome
-            const nomeLido = text.replace(/\n/g, " ").trim();
-            // Finaliza: Abre modal de edição
-            loading.style.display = 'none';
-            abrirEdicaoFinal(nomeLido || "Item", tempPreco);
-            // Limpeza
-            cropper.destroy();
-            cropper = null;
-        }
-
+        const video = document.getElementById('videoFeed');
+        stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { facingMode: "environment" } // Tenta câmera traseira
+        });
+        video.srcObject = stream;
+        document.getElementById('cameraOverlay').style.display = 'flex';
       } catch(err) {
-        alert("Erro: " + err.message);
-        loading.style.display = 'none';
-        document.getElementById('cropModal').style.display = 'flex';
+        alert("Erro ao abrir câmera. Verifique as permissões.");
+        console.error(err);
       }
     }
 
-    function cancelarCrop() {
-        document.getElementById('cropModal').style.display = 'none';
-        if(cropper) cropper.destroy();
+    function fecharCamera() {
+      const video = document.getElementById('videoFeed');
+      if(stream) {
+        stream.getTracks().forEach(t => t.stop());
+        stream = null;
+      }
+      video.srcObject = null;
+      document.getElementById('cameraOverlay').style.display = 'none';
     }
 
-    function extrairPreco(text) {
+    function configurarOverlay(modo) {
+      const guia = document.getElementById('scanGuide');
+      const texto = document.getElementById('scanText');
+      
+      if(modo === 'preco') {
+        texto.innerText = "Enquadre o PREÇO";
+        guia.style.height = "100px"; // Retângulo mais fino para preço
+        guia.style.borderColor = "#00d2d3";
+      } else {
+        texto.innerText = "Enquadre o NOME";
+        guia.style.height = "150px"; // Retângulo maior para nome
+        guia.style.borderColor = "#feca57";
+      }
+    }
+
+    // --- CAPTURA E OCR ---
+    async function capturarFoto() {
+      const video = document.getElementById('videoFeed');
+      const guia = document.getElementById('scanGuide');
+      const loading = document.getElementById('loading');
+
+      if(!worker) return alert("IA carregando...");
+
+      loading.style.display = 'block';
+
+      // 1. Cria canvas temporário
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+
+      // Tamanho do vídeo real vs tamanho na tela
+      const videoW = video.videoWidth;
+      const videoH = video.videoHeight;
+      const screenW = video.offsetWidth;
+      const screenH = video.offsetHeight;
+      
+      // Proporção
+      const scaleX = videoW / screenW;
+      const scaleY = videoH / screenH;
+
+      // Posição do Guia na tela
+      const rect = guia.getBoundingClientRect();
+      const videoRect = video.getBoundingClientRect();
+
+      // Coordenadas relativas ao vídeo (Recorte preciso)
+      const cropX = (rect.left - videoRect.left) * scaleX;
+      const cropY = (rect.top - videoRect.top) * scaleY;
+      const cropW = rect.width * scaleX;
+      const cropH = rect.height * scaleY;
+
+      canvas.width = cropW;
+      canvas.height = cropH;
+
+      // Desenha só o pedaço que estava no retângulo
+      ctx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+
+      // 2. Processa OCR
+      try {
+        if(modoAtual === 'preco') {
+          await worker.setParameters({ tessedit_char_whitelist: '0123456789$,.% ' });
+        } else {
+          await worker.setParameters({ tessedit_char_whitelist: '' });
+        }
+
+        const { data: { text } } = await worker.recognize(canvas);
+        
+        loading.style.display = 'none';
+        processarLeitura(text);
+
+      } catch(e) {
+        loading.style.display = 'none';
+        alert("Erro na leitura.");
+      }
+    }
+
+    function processarLeitura(texto) {
+      const modal = document.getElementById('confirmModal');
+      const titulo = document.getElementById('confirmTitle');
+      const valor = document.getElementById('resultValue');
+
+      // Pausa o vídeo (congelar imagem) para user ver o que tirou
+      // document.getElementById('videoFeed').pause(); 
+
+      if(modoAtual === 'preco') {
+        // Extrair número
         const regex = /(\d{1,4}[.,]\d{2})/g;
-        const matches = text.match(regex);
-        if(matches && matches.length > 0) {
-            const nums = matches.map(m => parseFloat(m.replace('.','').replace(',','.')));
-            return Math.max(...nums.filter(n => n < 10000));
-        }
-        return 0;
-    }
-
-    // --- EDIÇÃO FINAL DO ITEM (QTD, NOME, PREÇO) ---
-    function abrirEdicaoFinal(nome, preco) {
-        document.getElementById('inputQtd').value = 1;
-        document.getElementById('inputNome').value = nome;
-        document.getElementById('inputPreco').value = preco.toFixed(2); // Input aceita ponto
-        document.getElementById('editModal').style.display = 'flex';
-    }
-
-    function abrirEdicaoManual() {
-        abrirEdicaoFinal("", 0);
-    }
-
-    function fecharEdicao() {
-        document.getElementById('editModal').style.display = 'none';
-    }
-
-    function mudarQtd(delta) {
-        const input = document.getElementById('inputQtd');
-        let val = parseInt(input.value) || 1;
-        val += delta;
-        if(val < 1) val = 1;
-        input.value = val;
-    }
-
-    function confirmarItem() {
-        const qtd = parseInt(document.getElementById('inputQtd').value) || 1;
-        const nome = document.getElementById('inputNome').value || "Item Genérico";
-        const preco = parseFloat(document.getElementById('inputPreco').value);
-
-        if(!isNaN(preco) && preco > 0) {
-            dados.itens.push({ qtd, nome, preco });
-            salvar();
-            fecharEdicao();
-            // Feedback visual rápido (vibração se suportado)
-            try { navigator.vibrate(100); } catch(e){}
+        const matches = texto.match(regex);
+        if(matches) {
+           // Pega maior valor
+           const nums = matches.map(m => parseFloat(m.replace('.','').replace(',','.')));
+           const val = Math.max(...nums.filter(n => n < 5000)); // Filtro < 5000
+           tempPreco = val;
+           
+           titulo.innerText = "Preço Identificado";
+           valor.innerText = `R$ ${val.toFixed(2).replace('.',',')}`;
+           modal.style.display = 'flex';
         } else {
-            alert("Preço inválido!");
+           alert("Não achei números. Tente de novo.");
+           // document.getElementById('videoFeed').play();
         }
+
+      } else {
+        // Nome
+        const nomeLimpo = texto.replace(/\n/g, ' ').trim() || "Item sem nome";
+        tempNome = nomeLimpo;
+        
+        titulo.innerText = "Nome do Produto";
+        valor.innerText = nomeLimpo;
+        valor.style.fontSize = "20px";
+        modal.style.display = 'flex';
+      }
     }
 
-    // --- LÓGICA DE TELA ---
-    function removerItem(idx) {
-        if(confirm("Remover este item?")) {
-            dados.itens.splice(idx, 1);
-            salvar();
-            verLista(); // Renderiza de novo
-        }
+    function tentarNovamente() {
+      document.getElementById('confirmModal').style.display = 'none';
+      // document.getElementById('videoFeed').play(); // Descongela
     }
 
-    function atualizarTela() {
-        const total = dados.itens.reduce((acc, i) => acc + (i.preco * i.qtd), 0);
-        const formatter = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2 });
-        
-        document.getElementById('totalDisplay').innerText = "R$ " + formatter.format(total);
-        
-        const restante = dados.meta - total;
-        const elRest = document.getElementById('restanteDisplay');
-        
-        if(dados.meta > 0) {
-            elRest.innerText = `Restam: R$ ${formatter.format(restante)}`;
-            elRest.style.color = restante < 0 ? "#d63031" : "#00b09b"; // Vermelho ou Verde
-        } else {
-            elRest.innerText = "Sem meta definida";
-            elRest.style.color = "#777";
-        }
+    function confirmarLeitura() {
+      document.getElementById('confirmModal').style.display = 'none';
+
+      if(modoAtual === 'preco') {
+        // Passa para o próximo passo: NOME
+        modoAtual = 'nome';
+        configurarOverlay('nome');
+        // Câmera continua aberta
+      } else {
+        // Fim do scan: Fecha câmera e abre quantidade
+        fecharCamera();
+        abrirQtdModal();
+      }
     }
 
-    // --- LISTA E EXPORTAÇÃO ---
+    // --- FINALIZAÇÃO (Quantidade) ---
+    function abrirQtdModal() {
+      document.getElementById('finalQtd').value = 1;
+      const resumo = document.getElementById('resumoFinal');
+      resumo.innerText = `${tempNome}\nR$ ${tempPreco.toFixed(2).replace('.',',')} un.`;
+      document.getElementById('qtdModal').style.display = 'flex';
+    }
+
+    function ajustarQtd(delta) {
+      const el = document.getElementById('finalQtd');
+      let val = parseInt(el.value) || 1;
+      val += delta;
+      if(val < 1) val = 1;
+      el.value = val;
+    }
+
+    function salvarItem() {
+      const qtd = parseInt(document.getElementById('finalQtd').value) || 1;
+      dados.itens.push({
+        nome: tempNome,
+        preco: tempPreco,
+        qtd: qtd
+      });
+      salvar();
+      document.getElementById('qtdModal').style.display = 'none';
+    }
+
+    // --- MANUAL ---
+    function addManual() {
+      const nome = prompt("Nome do produto:") || "Item Manual";
+      const preco = parseFloat((prompt("Preço Unitário:")||"").replace(',','.'));
+      if(preco) {
+        tempNome = nome;
+        tempPreco = preco;
+        abrirQtdModal();
+      }
+    }
+
+    // --- UI E LISTA ---
+    function atualizarUI() {
+      const total = dados.itens.reduce((acc, i) => acc + (i.preco * i.qtd), 0);
+      const formatter = new Intl.NumberFormat('pt-BR', {minimumFractionDigits:2});
+      
+      document.getElementById('totalDisplay').innerText = "R$ " + formatter.format(total);
+      
+      const rest = dados.meta - total;
+      const elRest = document.getElementById('restanteDisplay');
+      if(dados.meta > 0) {
+        elRest.innerText = `Restam: R$ ${formatter.format(rest)}`;
+        elRest.style.color = rest < 0 ? '#e17055' : '#10ac84';
+      } else {
+        elRest.innerText = "Sem meta";
+        elRest.style.color = "#777";
+      }
+    }
+
     function verLista() {
-        const div = document.getElementById('itensContainer');
-        if(dados.itens.length === 0) {
-            div.innerHTML = "<div style='text-align:center; padding:40px; color:#999'>Sua lista está vazia.<br>Comece a adicionar itens!</div>";
-        } else {
-            div.innerHTML = dados.itens.map((item, i) => `
-                <div class="item-row">
-                    <div style="display:flex; align-items:center;">
-                        <span class="item-qtd">${item.qtd}x</span>
-                        <div class="item-name">${item.nome}</div>
-                    </div>
-                    <div style="display:flex; align-items:center; gap:15px;">
-                        <div class="item-price">R$ ${(item.preco * item.qtd).toFixed(2).replace('.',',')}</div>
-                        <button onclick="removerItem(${i})" style="color:#d63031; background:none; border:none; font-size:20px">🗑️</button>
-                    </div>
-                </div>
-            `).join('');
-        }
-        document.getElementById('modalLista').style.display = 'flex';
+      const div = document.getElementById('listaContainer');
+      div.innerHTML = dados.itens.map((item, i) => `
+        <div class="item-row">
+          <div>
+            <div style="font-weight:bold; font-size:14px; color:#555">${item.qtd}x ${item.nome}</div>
+            <div style="color:#10ac84; font-weight:bold">R$ ${(item.preco*item.qtd).toFixed(2).replace('.',',')}</div>
+          </div>
+          <button onclick="remover(${i})" style="color:red; border:none; background:none; font-size:20px">🗑️</button>
+        </div>
+      `).join('');
+      document.getElementById('listaModal').style.display = 'flex';
     }
 
-    function fecharLista() { document.getElementById('modalLista').style.display = 'none'; }
+    function remover(i) {
+      if(confirm("Remover?")) { dados.itens.splice(i,1); salvar(); verLista(); }
+    }
 
+    // --- EXPORT ---
     function zap() {
-        const total = dados.itens.reduce((acc, i) => acc + (i.preco * i.qtd), 0);
-        let msg = "*🛒 Minha Lista de Compras*\n\n";
-        dados.itens.forEach(i => {
-            msg += `[${i.qtd}x] ${i.nome} ...... R$ ${(i.preco * i.qtd).toFixed(2).replace('.',',')}\n`;
-        });
-        msg += `\n*TOTAL FINAL: R$ ${total.toFixed(2).replace('.',',')}*`;
-        window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`);
+      let msg = "*Lista de Compras*\n";
+      let tot = 0;
+      dados.itens.forEach(i => {
+        const t = i.preco*i.qtd; tot+=t;
+        msg += `${i.qtd}x ${i.nome} (R$ ${t.toFixed(2)})\n`;
+      });
+      msg += `\n*TOTAL: R$ ${tot.toFixed(2)}*`;
+      window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`);
     }
 
     function pdf() {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        const total = dados.itens.reduce((acc, i) => acc + (i.preco * i.qtd), 0);
-        
-        doc.setFontSize(18);
-        doc.text("Lista de Compras - LimitCalc", 20, 20);
-        
-        const body = dados.itens.map(i => [
-            i.qtd, 
-            i.nome, 
-            `R$ ${i.preco.toFixed(2).replace('.',',')}`, 
-            `R$ ${(i.preco*i.qtd).toFixed(2).replace('.',',')}`
-        ]);
-
-        doc.autoTable({
-            startY: 30,
-            head: [['Qtd', 'Produto', 'Unit.', 'Total']],
-            body: body,
-            theme: 'striped'
-        });
-        
-        doc.setFontSize(14);
-        doc.text(`Total Geral: R$ ${total.toFixed(2).replace('.',',')}`, 20, doc.lastAutoTable.finalY + 15);
-        doc.save('Lista_LimitCalc.pdf');
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      doc.text("Lista LimitCalc", 20,20);
+      doc.autoTable({
+        head:[['Qtd','Item','Total']],
+        body: dados.itens.map(i => [i.qtd, i.nome, `R$ ${(i.preco*i.qtd).toFixed(2)}`])
+      });
+      doc.save('lista.pdf');
     }
   </script>
 </body>
