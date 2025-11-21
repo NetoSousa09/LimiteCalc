@@ -3,398 +3,264 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LimitCalc Pro</title>
+  <title>LimitCalc Leve</title>
   
   <!-- Tesseract (OCR) -->
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
-  <!-- jsPDF (Gerar PDF) -->
+  <!-- jsPDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <!-- jsPDF AutoTable (Tabelas bonitas no PDF) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
   <style>
     :root { --primary: #00bd56; --danger: #f44336; --dark: #333; }
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f8f9fa; margin: 0; color: var(--dark); padding-bottom: 80px; }
+    body { font-family: sans-serif; background: #f8f9fa; margin: 0; padding-bottom: 80px; touch-action: manipulation; }
     
-    /* Header */
-    header { background: var(--primary); color: white; text-align: center; padding: 20px; border-radius: 0 0 20px 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-    header h1 { margin: 0; font-size: 28px; }
-    header span { color: #004d23; }
+    header { background: var(--primary); color: white; text-align: center; padding: 15px; border-radius: 0 0 20px 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    header h1 { margin: 0; font-size: 24px; }
 
-    /* Container Principal */
     .container { max-width: 600px; margin: 0 auto; padding: 15px; text-align: center; }
 
     /* Input Limite */
-    .limit-box { background: white; padding: 15px; border-radius: 15px; margin-top: -30px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; gap: 10px; justify-content: center; align-items: center; }
-    input[type="number"] { padding: 12px; border: 2px solid #eee; border-radius: 10px; font-size: 18px; width: 120px; text-align: center; outline: none; }
-    input:focus { border-color: var(--primary); }
+    .limit-box { background: white; padding: 10px; border-radius: 15px; margin-top: -25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: inline-flex; gap: 10px; align-items: center; }
+    input[type="number"] { padding: 8px; border: 2px solid #eee; border-radius: 8px; font-size: 18px; width: 100px; text-align: center; }
 
-    /* Círculo de Progresso */
-    #circle { width: 260px; height: 260px; margin: 30px auto; border-radius: 50%; border: 20px solid #eee; position: relative; display: flex; align-items: center; justify-content: center; transition: border-color 0.5s ease; background: white; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-    #progress-text { font-size: 42px; font-weight: bold; color: var(--dark); }
-    #progress-sub { font-size: 14px; color: #777; position: absolute; bottom: 70px; }
+    /* Círculo */
+    #circle { width: 220px; height: 220px; margin: 20px auto; border-radius: 50%; border: 15px solid #eee; display: flex; flex-direction: column; align-items: center; justify-content: center; background: white; }
+    #progress-text { font-size: 36px; font-weight: bold; color: var(--dark); }
 
-    /* Botões */
-    .btn-group { display: flex; flex-direction: column; gap: 15px; align-items: center; }
-    .btn { padding: 16px 24px; font-size: 18px; border: none; border-radius: 50px; cursor: pointer; width: 100%; max-width: 300px; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 10px; transition: transform 0.1s; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-    .btn:active { transform: scale(0.98); }
-    .btn-cam { background: #007bff; color: white; }
+    /* Botões Grandes */
+    .btn { padding: 15px; font-size: 18px; border: none; border-radius: 12px; cursor: pointer; width: 100%; margin-bottom: 10px; color: white; font-weight: bold; }
+    .btn-cam { background: #007bff; }
     .btn-add { background: white; border: 2px solid var(--primary); color: var(--primary); }
-    .btn-list { background: var(--dark); color: white; margin-top: 20px; }
+    .btn-list { background: var(--dark); }
 
-    /* Modal (Lista de Produtos) */
-    #modalLista { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; overflow-y: auto; flex-direction: column; }
-    .modal-header { padding: 20px; background: #f4f4f4; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; }
-    .modal-body { padding: 20px; flex: 1; }
-    .item-card { background: white; border-bottom: 1px solid #eee; padding: 15px 0; display: flex; justify-content: space-between; align-items: center; }
-    .item-info { text-align: left; }
-    .item-name { font-weight: bold; display: block; font-size: 16px; }
-    .item-price { color: var(--primary); font-size: 18px; }
-    .btn-del { color: var(--danger); background: none; border: none; font-size: 24px; padding: 0 10px; cursor: pointer; }
-
-    /* Overlay de Carregamento */
-    #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; color: white; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
-    .spinner { width: 50px; height: 50px; border: 5px solid #fff; border-top: 5px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    /* Modal */
+    #modalLista { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; flex-direction: column; }
+    .modal-header { padding: 15px; background: #eee; display: flex; justify-content: space-between; align-items: center; }
+    .modal-body { flex: 1; overflow-y: auto; padding: 10px; }
+    .item-card { background: #fff; border-bottom: 1px solid #ddd; padding: 10px; display: flex; justify-content: space-between; align-items: center; }
+    
+    /* Loading */
+    #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; color: white; flex-direction: column; justify-content: center; align-items: center; }
   </style>
 </head>
 <body>
 
   <header>
-    <h1>LimitCalc <span>Pro</span></h1>
+    <h1>LimitCalc <span>Lite</span></h1>
   </header>
 
   <div class="container">
-    <!-- Definição de Limite -->
     <div class="limit-box">
       <span>Meta: R$</span>
-      <input type="number" id="limiteInput" placeholder="0,00" onblur="definirLimite()">
+      <input type="number" id="limiteInput" placeholder="0" onblur="definirLimite()">
     </div>
 
-    <!-- Visualização -->
     <div id="circle">
       <div id="progress-text">R$ 0,00</div>
-      <div id="progress-sub">Gasto Total</div>
+      <small>Gasto Total</small>
     </div>
 
-    <!-- Ações -->
-    <div class="btn-group">
-      <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none" onchange="processarImagem(this)">
-      
-      <button class="btn btn-cam" onclick="document.getElementById('cameraInput').click()">
-        📷 Capturar Etiqueta
-      </button>
-      
-      <button class="btn btn-add" onclick="adicionarManual()">
-        ⌨️ Digitar Manualmente
-      </button>
-
-      <button class="btn btn-list" onclick="abrirLista()">
-        📄 Ver Lista de Produtos
-      </button>
-    </div>
+    <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none" onchange="processarImagem(this)">
+    
+    <button class="btn btn-cam" onclick="document.getElementById('cameraInput').click()">📷 Capturar Preço</button>
+    <button class="btn btn-add" onclick="adicionarManual()">⌨️ Digitar Manual</button>
+    <button class="btn btn-list" onclick="abrirLista()">📄 Ver Lista</button>
   </div>
 
-  <!-- Modal de Lista -->
+  <!-- Modal Lista -->
   <div id="modalLista">
     <div class="modal-header">
-      <h2>Minha Lista</h2>
-      <button onclick="fecharLista()" style="font-size:24px; border:none; background:none;">✕</button>
+      <h3>Minha Lista</h3>
+      <button onclick="fecharLista()" style="font-size:20px;border:none;background:none">✕</button>
     </div>
-    
-    <!-- Botões de Exportação -->
-    <div style="padding: 10px 20px; display: flex; gap: 10px;">
-      <button class="btn" style="background:#25D366; color:white; font-size:14px;" onclick="compartilharWhatsApp()">WhatsApp</button>
-      <button class="btn" style="background:#E91E63; color:white; font-size:14px;" onclick="gerarPDF()">Salvar PDF</button>
+    <div style="padding:10px; display:flex; gap:10px">
+      <button class="btn" style="background:#25D366; margin:0" onclick="zap()">WhatsApp</button>
+      <button class="btn" style="background:#E91E63; margin:0" onclick="pdf()">PDF</button>
     </div>
-
-    <div class="modal-body" id="listaBody">
-      <!-- Itens renderizados aqui -->
-    </div>
+    <div class="modal-body" id="listaBody"></div>
   </div>
 
-  <!-- Overlay de Loading -->
+  <!-- Loading -->
   <div id="loadingOverlay">
-    <div class="spinner"></div>
-    <h3 id="loadingText">Inicializando Inteligência Artificial...</h3>
-    <p style="font-size: 12px; color: #ccc;">Isso pode levar alguns segundos.</p>
+    <h2>Lendo...</h2>
+    <p>Aguarde um momento</p>
   </div>
 
   <script>
-    // --- ESTADO DA APLICAÇÃO ---
-    let estado = {
-      limite: 0,
-      total: 0,
-      itens: []
-    };
+    // --- SETUP LEVE ---
+    let estado = { limite: 0, total: 0, itens: [] };
     let worker = null;
 
-    // --- INICIALIZAÇÃO ---
     window.onload = async () => {
-      carregarDados();
-      inicializarOCR();
-    };
-
-    function carregarDados() {
-      if(localStorage.limitCalcPro) {
-        try {
-          estado = JSON.parse(localStorage.limitCalcPro);
-          document.getElementById('limiteInput').value = estado.limite || '';
-          atualizarInterface();
-        } catch(e) { console.error(e); }
-      }
-    }
-
-    function salvar() {
-      localStorage.limitCalcPro = JSON.stringify(estado);
+      if(localStorage.limitCalcLite) estado = JSON.parse(localStorage.limitCalcLite);
+      document.getElementById('limiteInput').value = estado.limite || '';
       atualizarInterface();
-    }
-
-    // --- OCR (Inteligência de Leitura) ---
-    async function inicializarOCR() {
+      
+      // Inicializa OCR silenciosamente
       try {
         worker = await Tesseract.createWorker();
         await worker.loadLanguage('por');
         await worker.initialize('por');
-        // Configura para buscar apenas caracteres relevantes
         await worker.setParameters({
-          tessedit_char_whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz$.,%ÇçÃãÕõÉéÊêÍíÓóÚú '
+          tessedit_char_whitelist: '0123456789$,.% ' // Só permite números e símbolos de preço
         });
-        console.log("OCR Pronto");
-      } catch (err) {
-        console.error("Erro OCR", err);
-      }
+        console.log("OCR Carregado");
+      } catch(e) { console.error(e); }
+    };
+
+    function salvar() {
+      localStorage.limitCalcLite = JSON.stringify(estado);
+      atualizarInterface();
     }
 
+    function definirLimite() {
+      estado.limite = parseFloat(document.getElementById('limiteInput').value) || 0;
+      salvar();
+    }
+
+    // --- LÓGICA OCR OTIMIZADA (SEM ESTOURAR MEMÓRIA) ---
     async function processarImagem(input) {
-      if (!input.files[0]) return;
-      
-      mostrarLoading(true, "Lendo etiqueta...");
-      const imagem = input.files[0];
+      const file = input.files[0];
+      if(!file) return;
+
+      document.getElementById('loadingOverlay').style.display = 'flex';
 
       try {
-        // Pré-processamento: Converter imagem para PB para facilitar leitura
-        const imagemProcessada = await preProcessarImagem(imagem);
-        
-        if(!worker) await inicializarOCR();
+        // 1. Redimensionar imagem para max 600px (Isso salva a memória RAM)
+        const imagemPequena = await redimensionarImagem(file);
 
-        const { data: { text } } = await worker.recognize(imagemProcessada);
+        // 2. Ler direto (sem processamento pesado de pixels)
+        if(!worker) { alert("IA ainda carregando..."); return; }
+        
+        const { data: { text } } = await worker.recognize(imagemPequena);
         
         interpretarTexto(text);
+
       } catch (err) {
-        alert("Não foi possível ler a imagem. Tente focar melhor no preço.");
+        alert("Erro de memória ou leitura. Tente uma foto mais de perto.");
         console.error(err);
       } finally {
-        mostrarLoading(false);
-        input.value = ''; // Limpar input
+        document.getElementById('loadingOverlay').style.display = 'none';
+        input.value = ''; // Limpa input
       }
     }
 
-    // Função mágica para melhorar contraste
-    function preProcessarImagem(file) {
+    function redimensionarImagem(file) {
       return new Promise((resolve) => {
         const img = new Image();
         img.onload = () => {
           const canvas = document.createElement('canvas');
           const ctx = canvas.getContext('2d');
-          // Redimensionar para não travar celular (max 800px width)
-          const scale = 800 / img.width;
-          canvas.width = 800;
+          
+          // Força largura máxima de 600px (O segredo para não travar)
+          const MAX_WIDTH = 600;
+          const scale = Math.min(MAX_WIDTH / img.width, 1);
+          
+          canvas.width = img.width * scale;
           canvas.height = img.height * scale;
           
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
           
-          // Converter para Grayscale (Preto e Branco)
-          const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-          const data = imgData.data;
-          for (let i = 0; i < data.length; i += 4) {
-            const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-            // Binarização simples (Threshold)
-            const cor = avg > 120 ? 255 : 0;
-            data[i] = cor; data[i+1] = cor; data[i+2] = cor;
-          }
-          ctx.putImageData(imgData, 0, 0);
-          resolve(canvas.toDataURL('image/jpeg'));
+          // Retorna o canvas direto (mais leve que toDataURL)
+          resolve(canvas);
         };
         img.src = URL.createObjectURL(file);
       });
     }
 
     function interpretarTexto(text) {
-      const linhas = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-      
-      // Regex poderoso para achar preço (R$ 10,90 ou 10.90 ou 10,90)
-      const regexPreco = /(?:R\$)?\s*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})/i;
-      
-      let possiveisPrecos = [];
-      let nomeProvavel = "Produto Desconhecido";
+      // Procura preços no texto bagunçado
+      const regex = /(?:R\$)?\s*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})/g;
+      let match;
+      let precos = [];
 
-      linhas.forEach(linha => {
-        const match = linha.match(regexPreco);
-        if (match) {
-          // Limpar valor
-          let valorStr = match[1].replace('.', '').replace(',', '.');
-          // Se o formato for 1.000,00 a lógica acima falha, ajuste fino:
-          if(match[1].indexOf(',') > -1 && match[1].indexOf('.') > -1) {
-             valorStr = match[1].replace('.', '').replace(',', '.');
-          } else if (match[1].indexOf(',') > -1) {
-             valorStr = match[1].replace(',', '.');
-          }
-          
-          const valor = parseFloat(valorStr);
-          if (valor > 0.05 && valor < 10000) possiveisPrecos.push(valor);
-        } else {
-          // Se a linha não tem preço e tem texto, pode ser o nome
-          if (linha.length > 4 && !linha.match(/^\d+$/)) {
-            nomeProvavel = linha;
-          }
-        }
-      });
-
-      if (possiveisPrecos.length > 0) {
-        // Pega o maior preço encontrado (geralmente é o destaque da etiqueta)
-        const precoFinal = Math.max(...possiveisPrecos);
+      while ((match = regex.exec(text)) !== null) {
+        // Corrige vírgula/ponto
+        let valStr = match[1];
+        if(valStr.includes(',') && !valStr.includes('.')) valStr = valStr.replace(',','.');
+        else if(valStr.includes('.') && valStr.includes(',')) valStr = valStr.replace('.','').replace(',','.');
         
-        // Confirmação
-        if(confirm(`Identificado:\n${nomeProvavel}\nR$ ${precoFinal.toFixed(2)}\n\nAdicionar?`)) {
-          adicionarItem(nomeProvavel, precoFinal);
+        const val = parseFloat(valStr);
+        if(val > 0 && val < 10000) precos.push(val);
+      }
+
+      if(precos.length > 0) {
+        const maiorPreco = Math.max(...precos); // Pega o maior (geralmente o correto)
+        if(confirm(`Preço identificado: R$ ${maiorPreco.toFixed(2)}\nAdicionar à lista?`)) {
+          adicionarItem("Produto " + (estado.itens.length + 1), maiorPreco);
         }
       } else {
-        alert("Preço não encontrado. Tente digitar manualmente.");
+        alert("Não consegui ler o preço. Tente digitar.");
       }
     }
 
-    // --- LÓGICA DE NEGÓCIO ---
-
-    function definirLimite() {
-      const val = parseFloat(document.getElementById('limiteInput').value);
-      if(!isNaN(val)) {
-        estado.limite = val;
-        salvar();
-      }
-    }
-
+    // --- CRUD BÁSICO ---
     function adicionarItem(nome, preco) {
       estado.itens.push({ nome, preco });
       estado.total += preco;
       salvar();
-      alert("Produto adicionado!");
     }
 
     function adicionarManual() {
-      const nome = prompt("Nome do produto:");
-      if (!nome) return;
-      const precoStr = prompt("Preço (ex: 15,90):");
-      if (!precoStr) return;
-      
-      const preco = parseFloat(precoStr.replace(',', '.'));
-      if (!isNaN(preco) && preco > 0) {
-        adicionarItem(nome, preco);
-      } else {
-        alert("Preço inválido");
-      }
+      const nome = prompt("Nome:") || "Item";
+      const preco = parseFloat((prompt("Valor:")||"").replace(',','.'));
+      if(preco) adicionarItem(nome, preco);
     }
 
-    function removerItem(index) {
-      if(confirm("Remover este item?")) {
-        estado.total -= estado.itens[index].preco;
-        estado.itens.splice(index, 1);
+    function remover(i) {
+      if(confirm("Excluir item?")) {
+        estado.total -= estado.itens[i].preco;
+        estado.itens.splice(i,1);
         salvar();
-        renderizarLista(); // Atualiza lista visual
+        renderLista();
       }
     }
 
     function atualizarInterface() {
-      // Atualiza Círculo
-      const elText = document.getElementById('progress-text');
-      const elCircle = document.getElementById('circle');
-      
-      elText.innerText = `R$ ${estado.total.toFixed(2).replace('.', ',')}`;
-      
-      if (estado.limite > 0) {
-        const porcentagem = (estado.total / estado.limite) * 100;
-        if (porcentagem < 50) elCircle.style.borderColor = "#4CAF50"; // Verde
-        else if (porcentagem < 90) elCircle.style.borderColor = "#FF9800"; // Laranja
-        else elCircle.style.borderColor = "#F44336"; // Vermelho
-      } else {
-        elCircle.style.borderColor = "#eee";
+      document.getElementById('progress-text').innerText = `R$ ${estado.total.toFixed(2).replace('.',',')}`;
+      const circ = document.getElementById('circle');
+      if(estado.limite > 0) {
+        const perc = (estado.total / estado.limite) * 100;
+        circ.style.borderColor = perc > 90 ? '#f44336' : (perc > 50 ? '#FF9800' : '#4CAF50');
       }
     }
 
-    // --- MODAL E EXPORTAÇÃO ---
-
-    function abrirLista() {
-      renderizarLista();
-      document.getElementById('modalLista').style.display = 'flex';
-    }
-
-    function fecharLista() {
-      document.getElementById('modalLista').style.display = 'none';
-    }
-
-    function renderizarLista() {
-      const container = document.getElementById('listaBody');
-      if (estado.itens.length === 0) {
-        container.innerHTML = "<p style='text-align:center; color:#777'>Lista vazia.</p>";
-        return;
-      }
-
-      container.innerHTML = estado.itens.map((item, idx) => `
+    // --- MODAL ---
+    function abrirLista() { renderLista(); document.getElementById('modalLista').style.display = 'flex'; }
+    function fecharLista() { document.getElementById('modalLista').style.display = 'none'; }
+    
+    function renderLista() {
+      const div = document.getElementById('listaBody');
+      div.innerHTML = estado.itens.map((item, i) => `
         <div class="item-card">
-          <div class="item-info">
-            <span class="item-name">${item.nome}</span>
-          </div>
-          <div style="display:flex; align-items:center; gap:10px;">
-             <span class="item-price">R$ ${item.preco.toFixed(2).replace('.', ',')}</span>
-             <button class="btn-del" onclick="removerItem(${idx})">🗑️</button>
+          <span>${item.nome}</span>
+          <div style="display:flex;align-items:center;gap:10px">
+            <b>R$ ${item.preco.toFixed(2).replace('.',',')}</b>
+            <button onclick="remover(${i})" style="color:red;border:none;background:none;font-size:20px">🗑️</button>
           </div>
         </div>
       `).join('');
     }
 
-    // EXPORTAR PDF
-    async function gerarPDF() {
+    // --- EXPORTAR ---
+    function zap() {
+      let msg = "*Minha Lista:*\n";
+      estado.itens.forEach(i => msg += `- ${i.nome}: R$ ${i.preco.toFixed(2)}\n`);
+      msg += `\n*Total: R$ ${estado.total.toFixed(2)}*`;
+      window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`);
+    }
+
+    function pdf() {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
-
-      doc.setFontSize(20);
-      doc.text("Minha Lista de Compras", 20, 20);
-      doc.setFontSize(12);
-      doc.text(`Data: ${new Date().toLocaleDateString()}`, 20, 30);
-      doc.text(`Total Gasto: R$ ${estado.total.toFixed(2)} / Limite: R$ ${estado.limite.toFixed(2)}`, 20, 40);
-
-      const dadosTabela = estado.itens.map(i => [i.nome, `R$ ${i.preco.toFixed(2)}`]);
-
+      doc.text("Lista de Compras", 20, 20);
       doc.autoTable({
-        head: [['Produto', 'Preço']],
-        body: dadosTabela,
-        startY: 50,
+        head: [['Item', 'Valor']],
+        body: estado.itens.map(i => [i.nome, `R$ ${i.preco.toFixed(2)}`])
       });
-
-      doc.save('Minha_Lista.pdf');
-    }
-
-    // COMPARTILHAR WHATSAPP
-    function compartilharWhatsApp() {
-      if (estado.itens.length === 0) return alert("Lista vazia!");
-
-      let msg = `*🛒 Minha Lista de Compras*\n\n`;
-      estado.itens.forEach(i => {
-        msg += `▪ ${i.nome}: R$ ${i.preco.toFixed(2).replace('.', ',')}\n`;
-      });
-      msg += `\n*💰 Total: R$ ${estado.total.toFixed(2).replace('.', ',')}*`;
-      
-      if(estado.limite > 0) msg += `\n🎯 Meta: R$ ${estado.limite.toFixed(2).replace('.', ',')}`;
-
-      const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
-      window.open(url, '_blank');
-    }
-
-    function mostrarLoading(show, text) {
-      const el = document.getElementById('loadingOverlay');
-      const txt = document.getElementById('loadingText');
-      if(text) txt.innerText = text;
-      el.style.display = show ? 'flex' : 'none';
+      doc.text(`Total: R$ ${estado.total.toFixed(2)}`, 20, doc.lastAutoTable.finalY + 10);
+      doc.save('lista.pdf');
     }
   </script>
 </body>
